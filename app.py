@@ -96,20 +96,17 @@ def helper_thread():
     while True:
         update_cache()
         print("helper thread updated cache with predictions")
-        thread_completed.set()
         time.sleep(60*10)
 
 cache = []
 helper = None
-thread_completed = threading.Event()
 @app.get('/predictions')
 async def predictions():
-    global helper
-    if helper is None:
-        helper = threading.Thread(target=helper_thread, daemon=True)
-        helper.start()
-        thread_completed.wait()
     return cache
+
+if __name__ == 'app':
+    helper = threading.Thread(target=helper_thread, daemon=True)
+    helper.start()
 
 if __name__ == '__main__':
     uvicorn.run("app:app", port=8000, reload=True)
