@@ -8,7 +8,17 @@ import json
 import uvicorn
 import yaml
 import threading
+import logging
 import time
+
+logging.Formatter.converter = time.gmtime
+
+formatter = logging.basicConfig(
+    # https://docs.python.org/3/library/logging.html#logrecord-attributes
+    format="%(asctime)s.%(msecs)03dZ %(threadName)s %(levelname)s:%(name)s:%(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+    level=logging.INFO,
+)
 
 args = get_args()
 with open(args.config, "r") as stream:
@@ -19,7 +29,7 @@ with open(args.config, "r") as stream:
     except yaml.YAMLError as exc:
         print(exc)
 
-BASE_URL = 'https://api.511.org/transit'
+PREDICTIONS_URL = 'https://api.511.org/transit/StopMonitoring'
 
 app = FastAPI()
 
@@ -48,9 +58,9 @@ def update_cache():
     cache.clear()
     # send post request for each agency's stop(s)
     for stop in stops:
-        agency = stop['operator']
-        stopCode = stop['id']
-        stopName= stop['name']
+        agency = stop.get('operator')
+        stopCode = stop.get('id')
+        stopName= stop.get('name')
 
         params = {
             'api_key': API_KEY,
@@ -59,43 +69,43 @@ def update_cache():
             'format': 'json'
         }
 
-        response = requests.get(BASE_URL + '/StopMonitoring', params=params)
+        response = requests.get(PREDICTIONS_URL, params=params)
 
-        if response.status_code == 200:
-            content = response.content.decode('utf-8-sig')
-            data = json.loads(content)
+        if response.status_code != 200:
+            logging.error(f"not parsing response because response code was {response.status_code}")
 
-            all_incoming_buses = data['ServiceDelivery']['StopMonitoringDelivery']['MonitoredStopVisit']
-            unique_buses = {}
-            for bus in all_incoming_buses:
-                line_ref = bus['MonitoredVehicleJourney']['LineRef']
-                expected_arrival = bus['MonitoredVehicleJourney']['MonitoredCall']['AimedArrivalTime']
+        content = response.content.decode('utf-8-sig')
+        data = json.loads(content)
+
+        all_incoming_buses = data.get('ServiceDelivery', {}).get('StopMonitoringDelivery', {}).get('MonitoredStopVisit')
+        unique_buses = {}
+        for bus in all_incoming_buses:
+            route_name = bus.get('MonitoredVehicleJourney', {}).get('LineRef')
+            expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
+            
+            if route_name not in unique_buses:
+                unique_buses[route_name] = []
                 
-                if line_ref not in unique_buses:
-                    unique_buses[line_ref] = []
-                    
-                unique_buses[line_ref].append(expected_arrival)
+            unique_buses[route_name].append(expected_arrival)
 
-            # for each unique bus, make a prediction object
-            predictions = []
-            for bus in unique_buses:
-                pred = Prediction(
-                    bus,
-                    unique_buses[bus]
-                )
-                predictions.append(pred)
-                
-            stopInfo = Stop(stopCode, stopName, predictions)
-            cache.append(stopInfo)
-
-        else:
-            return {'Error': 'Request failed'}, response.status_code
+        # for each unique bus, make a prediction object
+        predictions = []
+        for bus in unique_buses:
+            pred = Prediction(
+                bus,
+                unique_buses[bus]
+            )
+            predictions.append(pred)
+            
+        stopInfo = Stop(stopCode, stopName, predictions)
+        cache.append(stopInfo)
+        
     return
 
 def helper_thread():
     while True:
         update_cache()
-        print("helper thread updated cache with predictions")
+        logging.debug("helper thread updated cache with predictions")
         time.sleep(60*10)
 
 cache = []
@@ -109,4 +119,5 @@ if __name__ == 'app':
     helper.start()
 
 if __name__ == '__main__':
-    uvicorn.run("app:app", port=8000, reload=True)
+    logging.info(f"running on {args.host}, listening on port {args.port}")
+    uvicorn.run("app:app", host=args.host, port=args.port, reload=True)
