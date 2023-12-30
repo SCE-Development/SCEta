@@ -21,8 +21,8 @@ with open(args.config, "r") as stream:
         data = yaml.safe_load(stream)
         API_KEY = data.get("api_key", None)
         stops = data.get("stops", {})
-    except Exception as error:
-        logging.error(error)
+    except Exception:
+        logging.exception("unable to open yaml file/ file is missing data, exiting")
         sys.exit(1)
 
 logging.Formatter.converter = time.gmtime
