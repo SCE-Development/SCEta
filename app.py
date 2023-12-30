@@ -6,32 +6,32 @@ import typing
 import requests
 import json
 import uvicorn
-import yaml
 import threading
 import logging
 import time
+import yaml
+import sys
 
-logging.Formatter.converter = time.gmtime
 
-formatter = logging.basicConfig(
-    # https://docs.python.org/3/library/logging.html#logrecord-attributes
-    format="%(asctime)s.%(msecs)03dZ %(threadName)s %(levelname)s:%(name)s:%(message)s",
-    datefmt="%Y-%m-%dT%H:%M:%S",
-    level=logging.INFO,
-)
-
+app = FastAPI()
 args = get_args()
+
 with open(args.config, "r") as stream:
     try:
         data = yaml.safe_load(stream)
         API_KEY = data.get("api_key", None)
         stops = data.get("stops", {})
-    except yaml.YAMLError as exc:
-        print(exc)
+    except Exception as error:
+        logging.error(error)
+        sys.exit(1)
 
-PREDICTIONS_URL = 'https://api.511.org/transit/StopMonitoring'
+logging.Formatter.converter = time.gmtime
 
-app = FastAPI()
+formatter = logging.basicConfig(
+    format="%(asctime)s.%(msecs)03dZ %(threadName)s %(levelname)s:%(name)s:%(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+    level=logging.ERROR,
+)
 
 origins = ["*"]
 app.add_middleware(
@@ -53,6 +53,8 @@ class Stop:
   name: str
   predictions: typing.List[Prediction]
 
+PREDICTIONS_URL = 'https://api.511.org/transit/StopMonitoring'
+cache = []
 def update_cache():
     # clear cache of any previous (now outdated) data
     cache.clear()
@@ -108,8 +110,6 @@ def helper_thread():
         logging.debug("helper thread updated cache with predictions")
         time.sleep(60*10)
 
-cache = []
-helper = None
 @app.get('/predictions')
 async def predictions():
     return cache
