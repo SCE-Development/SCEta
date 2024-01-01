@@ -77,6 +77,7 @@ def update_cache():
 
         if response.status_code != 200:
             logging.error(f"not parsing response because response code was {response.status_code}")
+            sys.exit(1)
 
         content = response.content.decode('utf-8-sig')
         data = json.loads(content)
