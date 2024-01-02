@@ -14,6 +14,7 @@ import uvicorn
 import yaml
 
 from args import get_args
+from metrics import MetricsHandler
 
 
 app = FastAPI()
@@ -44,6 +45,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+metrics_handler = MetricsHandler.instance()
 
 @dataclass
 class Prediction:
@@ -103,8 +106,8 @@ def update_cache():
             )
             predictions.append(pred)
 
-        predictions_count.inc(len(predictions))
-        stops_count.inc(amount=1)
+        MetricsHandler.predictions_count.inc(len(predictions))
+        MetricsHandler.stops_count.inc(amount=1)
         stopInfo = Stop(stopCode, stopName, predictions)
         cache.append(stopInfo)
         
@@ -130,14 +133,6 @@ def get_metrics():
 if __name__ == 'app':
     helper = threading.Thread(target=helper_thread, daemon=True)
     helper.start()
-    stops_count = prometheus_client.Counter(
-        "stops_count", 
-        "number of stops checked"
-    )
-    predictions_count = prometheus_client.Counter(
-        "predictions_count", 
-        "number of predictions made (one for each incoming bus)"
-    )
 
 if __name__ == '__main__':
     logging.info(f"running on {args.host}, listening on port {args.port}")
