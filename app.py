@@ -5,9 +5,10 @@ import time
 import typing
 from dataclasses import dataclass
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 import json
+import prometheus_client
 import requests
 import uvicorn
 import yaml
@@ -101,7 +102,9 @@ def update_cache():
                 unique_buses[bus]
             )
             predictions.append(pred)
-            
+
+        predictions_count.inc(len(predictions))
+        stops_count.inc(amount=1)
         stopInfo = Stop(stopCode, stopName, predictions)
         cache.append(stopInfo)
         
@@ -114,12 +117,27 @@ def helper_thread():
         time.sleep(60*10)
 
 @app.get('/predictions')
-async def predictions():
+def predictions():
     return cache
+
+@app.get('/metrics')
+def get_metrics():
+    return Response(
+        media_type='text/plain',
+        content=prometheus_client.generate_latest(),
+    )
 
 if __name__ == 'app':
     helper = threading.Thread(target=helper_thread, daemon=True)
     helper.start()
+    stops_count = prometheus_client.Counter(
+        "stops_count", 
+        "number of stops checked"
+    )
+    predictions_count = prometheus_client.Counter(
+        "predictions_count", 
+        "number of predictions made (one for each incoming bus)"
+    )
 
 if __name__ == '__main__':
     logging.info(f"running on {args.host}, listening on port {args.port}")
