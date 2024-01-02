@@ -13,4 +13,3 @@ COPY *.py .
 EXPOSE 8000
 
 ENTRYPOINT ["python", "app.py"]
-CMD ["--config", "data.yaml"]
