@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  server:
+    container_name: "SCEta-server"
+    build: 
+      dockerfile: ./Dockerfile
+      context: .
+    volumes:
+      - ./data.yaml:/server/data.yaml
+    ports:
+      - 8000:8000
+    
