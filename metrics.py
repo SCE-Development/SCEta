@@ -13,6 +13,29 @@ class Metrics(enum.Enum):
         "Number of predictions made (one for each incoming bus)",
         prometheus_client.Counter,
     )
+    API_RESPONSE_CODES = (
+        "api_response_codes",
+        "Response codes of requests made to 511 API",
+        prometheus_client.Counter,
+        ['code'],
+    )
+    API_LATENCY = (
+        "api_latency",
+        "Latency/ response time of requests made to 511 API",
+        prometheus_client.Summary,
+    )
+    CACHE_LAST_UPDATED = (
+        "cache_last_updated",
+        "Timestamp of when our cache was last updated",
+        prometheus_client.Gauge,
+        ['timestamp'],
+    )
+    HTTP_CODE = (
+        "http_code",
+        "Count of each HTTP Response code",
+        prometheus_client.Counter,
+        ['code'],
+    )
 
     def __init__(self, title, description, prometheus_type, labels=()):
         self.title = title

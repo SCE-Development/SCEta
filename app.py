@@ -5,7 +5,7 @@ import time
 import typing
 from dataclasses import dataclass
 
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
 import json
 import prometheus_client
@@ -34,7 +34,7 @@ logging.Formatter.converter = time.gmtime
 formatter = logging.basicConfig(
     format="%(asctime)s.%(msecs)03dZ %(threadName)s %(levelname)s:%(name)s:%(message)s",
     datefmt="%Y-%m-%dT%H:%M:%S",
-    level=logging.INFO,
+    level=logging.DEBUG,
 )
 
 origins = ["*"]
@@ -77,11 +77,17 @@ def update_cache():
             'format': 'json'
         }
 
-        response = requests.get(PREDICTIONS_URL, params=params)
+        with MetricsHandler.api_latency.time():
+            response = requests.get(PREDICTIONS_URL, params=params)
 
+        # unsuccessful request to 511 API
         if response.status_code != 200:
+            MetricsHandler.api_response_codes.labels(response.status_code).inc() 
             logging.error(f"not parsing response because response code was {response.status_code}")
             sys.exit(1)
+
+        # successful request to 511 API
+        MetricsHandler.api_response_codes.labels(response.status_code).inc() 
 
         content = response.content.decode('utf-8-sig')
         data = json.loads(content)
@@ -107,7 +113,7 @@ def update_cache():
             predictions.append(pred)
 
         MetricsHandler.predictions_count.inc(len(predictions))
-        MetricsHandler.stops_count.inc(amount=1)
+        MetricsHandler.stops_count.inc(1)
         stopInfo = Stop(stopCode, stopName, predictions)
         cache.append(stopInfo)
         
@@ -117,7 +123,16 @@ def helper_thread():
     while True:
         update_cache()
         logging.debug("helper thread updated cache with predictions")
+        MetricsHandler.cache_last_updated.labels(time.asctime()).set(1)
         time.sleep(60*10)
+
+# middleware to get metrics on HTTP response codes
+@app.middleware("http")
+async def track_response_codes(request: Request, call_next):
+    response = await call_next(request)
+    status_code = response.status_code
+    MetricsHandler.http_code.labels(status_code).inc(1)
+    return response
 
 @app.get('/predictions')
 def predictions():
