@@ -13,8 +13,8 @@ import requests
 import uvicorn
 import yaml
 
-from args import get_args
-from metrics import MetricsHandler
+from modules.args import get_args
+from modules.metrics import MetricsHandler
 
 
 app = FastAPI()
@@ -131,7 +131,7 @@ def helper_thread():
 async def track_response_codes(request: Request, call_next):
     response = await call_next(request)
     status_code = response.status_code
-    MetricsHandler.http_code.labels(status_code).inc(1)
+    MetricsHandler.http_code.labels(request.url.path, status_code).inc(1)
     return response
 
 @app.get('/predictions')

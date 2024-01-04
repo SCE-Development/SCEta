@@ -33,7 +33,7 @@ class Metrics(enum.Enum):
         "http_code",
         "Count of each HTTP Response code",
         prometheus_client.Counter,
-        ['code'],
+        ['path', 'code'],
     )
 
     def __init__(self, title, description, prometheus_type, labels=()):
