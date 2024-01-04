@@ -34,7 +34,7 @@ logging.Formatter.converter = time.gmtime
 formatter = logging.basicConfig(
     format="%(asctime)s.%(msecs)03dZ %(threadName)s %(levelname)s:%(name)s:%(message)s",
     datefmt="%Y-%m-%dT%H:%M:%S",
-    level=logging.DEBUG,
+    level=logging.INFO,
 )
 
 origins = ["*"]
