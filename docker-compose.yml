@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  server:
+    container_name: "sceta-server"
+    restart: always
+    build: 
+      dockerfile: ./Dockerfile
+      context: .
+    command:
+      - --config=/server/data.yaml
+    volumes:
+      - ./data.yaml:/server/data.yaml
+      - ./app.py:/server/app.py
+      - ./modules:/server/modules
+    ports:
+      - 8000:8000
+  prometheus:
+    image: prom/prometheus:latest
+    restart: always
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090

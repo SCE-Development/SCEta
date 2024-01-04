@@ -1,3 +1,4 @@
+import json
 import logging
 import sys
 import threading
@@ -5,14 +6,15 @@ import time
 import typing
 from dataclasses import dataclass
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
-import json
+import prometheus_client
 import requests
 import uvicorn
 import yaml
 
-from args import get_args
+from modules.args import get_args
+from modules.metrics import MetricsHandler
 
 
 app = FastAPI()
@@ -44,6 +46,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+metrics_handler = MetricsHandler.instance()
+
 @dataclass
 class Prediction:
   route: str
@@ -73,11 +77,18 @@ def update_cache():
             'format': 'json'
         }
 
-        response = requests.get(PREDICTIONS_URL, params=params)
+        with MetricsHandler.api_latency.time():
+            response = requests.get(PREDICTIONS_URL, params=params)
 
+        # unsuccessful request to 511 API
         if response.status_code != 200:
+            MetricsHandler.api_response_codes.labels(response.status_code).inc() 
             logging.error(f"not parsing response because response code was {response.status_code}")
-            sys.exit(1)
+            time.sleep(10)
+            continue
+
+        # successful request to 511 API
+        MetricsHandler.api_response_codes.labels(response.status_code).inc() 
 
         content = response.content.decode('utf-8-sig')
         data = json.loads(content)
@@ -101,7 +112,7 @@ def update_cache():
                 unique_buses[bus]
             )
             predictions.append(pred)
-            
+
         stopInfo = Stop(stopCode, stopName, predictions)
         cache.append(stopInfo)
         
@@ -111,11 +122,27 @@ def helper_thread():
     while True:
         update_cache()
         logging.debug("helper thread updated cache with predictions")
+        MetricsHandler.cache_last_updated.set(int(time.time()))
         time.sleep(60*10)
 
+# middleware to get metrics on HTTP response codes
+@app.middleware("http")
+async def track_response_codes(request: Request, call_next):
+    response = await call_next(request)
+    status_code = response.status_code
+    MetricsHandler.http_code.labels(request.url.path, status_code).inc()
+    return response
+
 @app.get('/predictions')
-async def predictions():
+def predictions():
     return cache
+
+@app.get('/metrics')
+def get_metrics():
+    return Response(
+        media_type='text/plain',
+        content=prometheus_client.generate_latest(),
+    )
 
 if __name__ == 'app':
     helper = threading.Thread(target=helper_thread, daemon=True)
