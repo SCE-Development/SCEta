@@ -2,17 +2,8 @@ import enum
 
 import prometheus_client
 
+
 class Metrics(enum.Enum):
-    STOPS_COUNT = (
-        "stops_count", 
-        "Number of stops checked",
-        prometheus_client.Counter,
-    )
-    PREDICTIONS_COUNT = (
-        "predictions_count", 
-        "Number of predictions made (one for each incoming bus)",
-        prometheus_client.Counter,
-    )
     API_RESPONSE_CODES = (
         "api_response_codes",
         "Response codes of requests made to 511 API",
@@ -64,3 +55,4 @@ class MetricsHandler:
             cls._instance = cls.__new__(cls)
             cls.init(cls)
         return cls._instance
+    

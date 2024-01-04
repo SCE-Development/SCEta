@@ -1,3 +1,4 @@
+import json
 import logging
 import sys
 import threading
@@ -7,7 +8,6 @@ from dataclasses import dataclass
 
 from fastapi import FastAPI, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
-import json
 import prometheus_client
 import requests
 import uvicorn
@@ -84,7 +84,8 @@ def update_cache():
         if response.status_code != 200:
             MetricsHandler.api_response_codes.labels(response.status_code).inc() 
             logging.error(f"not parsing response because response code was {response.status_code}")
-            sys.exit(1)
+            time.sleep(10)
+            continue
 
         # successful request to 511 API
         MetricsHandler.api_response_codes.labels(response.status_code).inc() 
@@ -95,7 +96,6 @@ def update_cache():
         all_incoming_buses = data.get('ServiceDelivery', {}).get('StopMonitoringDelivery', {}).get('MonitoredStopVisit')
         unique_buses = {}
         for bus in all_incoming_buses:
-            MetricsHandler.predictions_count.inc()
             route_name = bus.get('MonitoredVehicleJourney', {}).get('LineRef')
             expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
             
@@ -113,7 +113,6 @@ def update_cache():
             )
             predictions.append(pred)
 
-        MetricsHandler.stops_count.inc()
         stopInfo = Stop(stopCode, stopName, predictions)
         cache.append(stopInfo)
         
@@ -131,7 +130,7 @@ def helper_thread():
 async def track_response_codes(request: Request, call_next):
     response = await call_next(request)
     status_code = response.status_code
-    MetricsHandler.http_code.labels(request.url.path, status_code).inc(1)
+    MetricsHandler.http_code.labels(request.url.path, status_code).inc()
     return response
 
 @app.get('/predictions')
