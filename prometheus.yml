@@ -5,4 +5,3 @@ scrape_configs:
   - job_name: 'sceta-server'
     static_configs:
       - targets: ['sceta-server:8000']
-      

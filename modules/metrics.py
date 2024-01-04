@@ -55,4 +55,3 @@ class MetricsHandler:
             cls._instance = cls.__new__(cls)
             cls.init(cls)
         return cls._instance
-    
