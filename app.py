@@ -113,7 +113,7 @@ def update_cache():
             )
             predictions.append(pred)
 
-        MetricsHandler.stops_count.inc(1)
+        MetricsHandler.stops_count.inc()
         stopInfo = Stop(stopCode, stopName, predictions)
         cache.append(stopInfo)
         
