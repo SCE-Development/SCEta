@@ -95,7 +95,7 @@ def update_cache():
         all_incoming_buses = data.get('ServiceDelivery', {}).get('StopMonitoringDelivery', {}).get('MonitoredStopVisit')
         unique_buses = {}
         for bus in all_incoming_buses:
-            MetricsHandler.predictions_count.inc(1)
+            MetricsHandler.predictions_count.inc()
             route_name = bus.get('MonitoredVehicleJourney', {}).get('LineRef')
             expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
             
@@ -113,7 +113,7 @@ def update_cache():
             )
             predictions.append(pred)
 
-        MetricsHandler.stops_count.inc(1)
+        MetricsHandler.stops_count.inc()
         stopInfo = Stop(stopCode, stopName, predictions)
         cache.append(stopInfo)
         
