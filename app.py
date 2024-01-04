@@ -95,6 +95,7 @@ def update_cache():
         all_incoming_buses = data.get('ServiceDelivery', {}).get('StopMonitoringDelivery', {}).get('MonitoredStopVisit')
         unique_buses = {}
         for bus in all_incoming_buses:
+            MetricsHandler.predictions_count.inc(1)
             route_name = bus.get('MonitoredVehicleJourney', {}).get('LineRef')
             expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
             
@@ -112,7 +113,6 @@ def update_cache():
             )
             predictions.append(pred)
 
-        MetricsHandler.predictions_count.inc(len(predictions))
         MetricsHandler.stops_count.inc(1)
         stopInfo = Stop(stopCode, stopName, predictions)
         cache.append(stopInfo)
@@ -123,7 +123,7 @@ def helper_thread():
     while True:
         update_cache()
         logging.debug("helper thread updated cache with predictions")
-        MetricsHandler.cache_last_updated.labels(time.asctime()).set(1)
+        MetricsHandler.cache_last_updated.set(int(time.time()))
         time.sleep(60*10)
 
 # middleware to get metrics on HTTP response codes

@@ -28,7 +28,6 @@ class Metrics(enum.Enum):
         "cache_last_updated",
         "Timestamp of when our cache was last updated",
         prometheus_client.Gauge,
-        ['timestamp'],
     )
     HTTP_CODE = (
         "http_code",
