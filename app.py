@@ -34,7 +34,7 @@ logging.Formatter.converter = time.gmtime
 formatter = logging.basicConfig(
     format="%(asctime)s.%(msecs)03dZ %(threadName)s %(levelname)s:%(name)s:%(message)s",
     datefmt="%Y-%m-%dT%H:%M:%S",
-    level=logging.INFO,
+    level=logging.ERROR - 10 * args.verbose,
 )
 
 origins = ["*"]
@@ -79,7 +79,7 @@ def update_cache():
 
         with MetricsHandler.api_latency.time():
             response = requests.get(PREDICTIONS_URL, params=params)
-
+        logging.debug(f'511`s API response code was {response.status_code}')
         # unsuccessful request to 511 API
         if response.status_code != 200:
             MetricsHandler.api_response_codes.labels(response.status_code).inc() 
