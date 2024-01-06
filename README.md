@@ -12,7 +12,7 @@
    - Window:
 
    ```sh
-   source sce-venv/Scripts/activate
+   .\sce-venv\modules\Scripts\activate.bat
    ```
 
    - MacOS/Linux
