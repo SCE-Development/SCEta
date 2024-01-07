@@ -24,6 +24,7 @@ with open(args.config, "r") as stream:
     try:
         data = yaml.safe_load(stream)
         API_KEY = data.get("api_key", None)
+        cache_update_interval = data.get('cache_update_interval_minutes', 1)
         stops = data.get("stops", {})
     except Exception:
         logging.exception("unable to open yaml file/ file is missing data, exiting")
@@ -123,7 +124,7 @@ def helper_thread():
         update_cache()
         logging.debug("helper thread updated cache with predictions")
         MetricsHandler.cache_last_updated.set(int(time.time()))
-        time.sleep(60*10)
+        time.sleep(60 * cache_update_interval)
 
 # middleware to get metrics on HTTP response codes
 @app.middleware("http")
