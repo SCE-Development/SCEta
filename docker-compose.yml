@@ -9,13 +9,13 @@ services:
     command:
       - --config=/server/data.yaml
       - --host=0.0.0.0
-      - --port=8000
+      - --port=8001
     volumes:
       - ./data.yaml:/server/data.yaml
       - ./app.py:/server/app.py
       - ./modules:/server/modules
     ports:
-      - 8000:8000
+      - 8001:8001
   prometheus:
     image: prom/prometheus:latest
     restart: always

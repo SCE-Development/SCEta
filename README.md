@@ -39,7 +39,7 @@
 - Command line:
 
   ```sh
-  python app.py --host=0.0.0.0 --port=5000 --config=data.yaml
+  python app.py --host=0.0.0.0 --port=8001 --config=data.yaml
   ```
 
 - Docker:
@@ -48,4 +48,4 @@
   docker-compose up --build
   ```
 
-6. Access transit predictions at http://localhost:8000/predictions
+6. Access transit predictions at http://localhost:8001/predictions
