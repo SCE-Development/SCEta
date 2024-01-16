@@ -74,7 +74,7 @@ def update_cache():
     agency_to_stop_suffix = {
         "BA": "BART",
     }
-    new_cache = []
+    new_stops = []
 
     # send post request for each agency's stop(s)
     for stop in stops:
@@ -117,15 +117,15 @@ def update_cache():
             route_destination = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('DestinationDisplay').title()
             expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
             
-                
-            unique_buses[route].route = route_name
-            unique_buses[route].destination = route_destination
-            unique_buses[route].times.append(expected_arrival)
+            route_key = (route_name, route_destination)
+            unique_buses[route_key].route = route_name
+            unique_buses[route_key].destination = route_destination
+            unique_buses[route_key].times.append(expected_arrival)
 
         stopInfo = Stop(stopCode, stopName, list(unique_buses.values()))
-        new_cache.append(stopInfo)
+        new_stops.append(stopInfo)
 
-    cache.stops = new_cache
+    cache.stops = new_stops
     cache.updated_at = datetime.datetime.now(datetime.timezone.utc)
 
 def helper_thread():
