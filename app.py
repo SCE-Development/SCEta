@@ -1,10 +1,12 @@
+import collections
+from dataclasses import dataclass
+import datetime
 import json
 import logging
 import sys
 import threading
 import time
 import typing
-from dataclasses import dataclass
 
 from fastapi import FastAPI, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -52,6 +54,7 @@ metrics_handler = MetricsHandler.instance()
 @dataclass
 class Prediction:
   route: str
+  destination: str
   times: typing.List[str]
 
 @dataclass
@@ -60,16 +63,29 @@ class Stop:
   name: str
   predictions: typing.List[Prediction]
 
+@dataclass
+class Cache:
+  stops: typing.List[Stop]
+  updated_at: str
+
 PREDICTIONS_URL = 'https://api.511.org/transit/StopMonitoring'
-cache = []
+cache = Cache([], '')
 def update_cache():
-    # clear cache of any previous (now outdated) data
-    cache.clear()
+    agency_to_stop_suffix = {
+        "BA": "BART",
+    }
+    new_stops = []
+
     # send post request for each agency's stop(s)
     for stop in stops:
         agency = stop.get('operator')
         stopCode = stop.get('id')
         stopName= stop.get('name')
+        # We add a suffix to some stop names to add context.
+        # For example, the BART stop called "Milpitas" becomes
+        # "Milpitas BART"
+        if (agency in agency_to_stop_suffix):
+            stopName = stopName + " " + agency_to_stop_suffix.get(agency)
 
         params = {
             'api_key': API_KEY,
@@ -95,29 +111,22 @@ def update_cache():
         data = json.loads(content)
 
         all_incoming_buses = data.get('ServiceDelivery', {}).get('StopMonitoringDelivery', {}).get('MonitoredStopVisit')
-        unique_buses = {}
+        unique_buses: typing.Dict[str, Prediction] = collections.defaultdict(lambda: Prediction("", "", []))
         for bus in all_incoming_buses:
             route_name = bus.get('MonitoredVehicleJourney', {}).get('LineRef')
+            route_destination = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('DestinationDisplay').title()
             expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
             
-            if route_name not in unique_buses:
-                unique_buses[route_name] = []
-                
-            unique_buses[route_name].append(expected_arrival)
+            route_key = (route_name, route_destination)
+            unique_buses[route_key].route = route_name
+            unique_buses[route_key].destination = route_destination
+            unique_buses[route_key].times.append(expected_arrival)
 
-        # for each unique bus, make a prediction object
-        predictions = []
-        for bus in unique_buses:
-            pred = Prediction(
-                bus,
-                unique_buses[bus]
-            )
-            predictions.append(pred)
+        stopInfo = Stop(stopCode, stopName, list(unique_buses.values()))
+        new_stops.append(stopInfo)
 
-        stopInfo = Stop(stopCode, stopName, predictions)
-        cache.append(stopInfo)
-        
-    return
+    cache.stops = new_stops
+    cache.updated_at = datetime.datetime.now(datetime.timezone.utc)
 
 def helper_thread():
     while True:
