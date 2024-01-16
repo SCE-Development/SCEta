@@ -131,7 +131,7 @@ def helper_thread():
     while True:
         update_cache()
         updated_cache.stops = cache
-        updated_cache.updated_at = datetime.now(timezone.utc)
+        updated_cache.updated_at = datetime.datetime.now(datetime.timezone.utc)
         logging.debug("helper thread updated cache with predictions")
         MetricsHandler.cache_last_updated.set(int(time.time()))
         time.sleep(60 * cache_update_interval)
