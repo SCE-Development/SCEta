@@ -81,6 +81,9 @@ def update_cache():
         agency = stop.get('operator')
         stopCode = stop.get('id')
         stopName= stop.get('name')
+        # We add a suffix to some stop names to add context.
+        # For example, the BART stop called "Milpitas" becomes
+        # "Milpitas BART"
         if (agency in agency_to_stop_suffix):
             stopName = stopName + " " + agency_to_stop_suffix.get(agency)
 
@@ -114,11 +117,10 @@ def update_cache():
             route_destination = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('DestinationDisplay').title()
             expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
             
-            route_identifier = route_name + " to " + route_destination
                 
-            unique_buses[route_identifier].route = route_name
-            unique_buses[route_identifier].destination = route_destination
-            unique_buses[route_identifier].times.append(expected_arrival)
+            unique_buses[route].route = route_name
+            unique_buses[route].destination = route_destination
+            unique_buses[route].times.append(expected_arrival)
 
         stopInfo = Stop(stopCode, stopName, list(unique_buses.values()))
         new_cache.append(stopInfo)
