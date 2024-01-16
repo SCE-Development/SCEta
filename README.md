@@ -8,9 +8,13 @@
    api_key: <YOUR API KEY from #1>
    stops:
      - operator: SC
-       id: 46573
-     - operator: SC
-       id: 46521
+      name: 10th & Taylor
+      ids: 
+        - 64995
+     - operator: BA
+      name: Berryessa / North San Jose
+      ids: 
+        - BERY
    cache_update_interval_minutes: 5
    ```
 
