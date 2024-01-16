@@ -1,13 +1,13 @@
 import collections
+from dataclasses import dataclass
+import datetime
 import json
 import logging
 import sys
 import threading
 import time
 import typing
-from dataclasses import dataclass
 
-from datetime import datetime, timezone
 from fastapi import FastAPI, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
 import prometheus_client
