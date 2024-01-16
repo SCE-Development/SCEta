@@ -69,15 +69,13 @@ class Cache:
   updated_at: str
 
 PREDICTIONS_URL = 'https://api.511.org/transit/StopMonitoring'
-cache = []
-updated_cache = Cache([], '')
-time_updated = ''
+cache = Cache([], '')
 def update_cache():
     agency_to_stop_suffix = {
         "BA": "BART",
     }
-    # clear cache of any previous (now outdated) data
-    cache.clear()
+    new_cache = []
+
     # send post request for each agency's stop(s)
     for stop in stops:
         agency = stop.get('operator')
@@ -123,15 +121,14 @@ def update_cache():
             unique_buses[route_identifier].times.append(expected_arrival)
 
         stopInfo = Stop(stopCode, stopName, list(unique_buses.values()))
-        cache.append(stopInfo)
-        
-    return
+        new_cache.append(stopInfo)
+
+    cache.stops = new_cache
+    cache.updated_at = datetime.datetime.now(datetime.timezone.utc)
 
 def helper_thread():
     while True:
         update_cache()
-        updated_cache.stops = cache
-        updated_cache.updated_at = datetime.datetime.now(datetime.timezone.utc)
         logging.debug("helper thread updated cache with predictions")
         MetricsHandler.cache_last_updated.set(int(time.time()))
         time.sleep(60 * cache_update_interval)
@@ -146,7 +143,7 @@ async def track_response_codes(request: Request, call_next):
 
 @app.get('/predictions')
 def predictions():
-    return updated_cache
+    return cache
 
 @app.get('/metrics')
 def get_metrics():
