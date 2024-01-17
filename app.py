@@ -58,7 +58,7 @@ class Prediction:
 
 @dataclass
 class Stop:
-  ids: typing.List[str]
+  ids: []
   name: str
   predictions: typing.List[Prediction]
 
@@ -70,63 +70,84 @@ class Cache:
 PREDICTIONS_URL = 'https://api.511.org/transit/StopMonitoring'
 cache = Cache([], '')
 def update_cache():
-    agency_to_stop_suffix = {
-        "BA": "BART",
-    }
-
     new_stops = []
 
     # send post request for each agency's stop(s)
     for stop in stops:
-        agency = stop.get('operator')
-        stop_name = stop.get('name')
-        stop_codes = stop.get('ids')
-        # We add a suffix to some stop names to add context.
-        # For example, the BART stop called "Milpitas" becomes
-        # "Milpitas BART"
-        if (agency in agency_to_stop_suffix):
-            stop_name = stop_name + " " + agency_to_stop_suffix.get(agency)
-        
-        unique_buses: typing.Dict[str, Prediction] = collections.defaultdict(lambda: Prediction("", collections.defaultdict(list)))
-        for stop_code in stop_codes:
-            params = {
-                'api_key': API_KEY,
-                'agency': agency,
-                'stopCode': stop_code,
-                'format': 'json'
-            }
-
-            with MetricsHandler.api_latency.time():
-                response = requests.get(PREDICTIONS_URL, params=params)
-                response = requests.get(PREDICTIONS_URL, params=params)
-            logging.debug(f'511`s API response code was {response.status_code}')
-            # unsuccessful request to 511 API
-            if response.status_code != 200:
-                MetricsHandler.api_response_codes.labels(response.status_code).inc() 
-                logging.error(f"not parsing response because response code was {response.status_code}")
-                time.sleep(10)
-                continue
-
-            # successful request to 511 API
-            MetricsHandler.api_response_codes.labels(response.status_code).inc() 
-
-            content = response.content.decode('utf-8-sig')
-            data = json.loads(content)
-
-            all_incoming_buses = data.get('ServiceDelivery', {}).get('StopMonitoringDelivery', {}).get('MonitoredStopVisit')
-            for bus in all_incoming_buses:
-                route_name = bus.get('MonitoredVehicleJourney', {}).get('LineRef')
-                route_destination = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('DestinationDisplay').title()
-                expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
-                
-                unique_buses[route_name].route = route_name
-                unique_buses[route_name].destinations[route_destination].append(expected_arrival)
-
-        stopInfo = Stop(stop_codes, stop_name, list(unique_buses.values()))
-        new_stops.append(stopInfo)
+        # check for stop grouping
+        if stop.get("group_name"):
+            group_name = stop.get("group_name")
+            stop_info = get_stop_predictions(stop.get("stops"), group_name)
+            new_stops.append(stop_info)
+            
+        # otherwise, get predictions for individual stop
+        else:
+            stop_name = add_suffix_to_name(stop)
+            stop_info = get_stop_predictions([stop], stop_name)
+            new_stops.append(stop_info)
 
     cache.stops = new_stops
     cache.updated_at = datetime.datetime.now(datetime.timezone.utc)
+
+def get_stop_predictions(stops, stop_name):
+    unique_buses: typing.Dict[str, Prediction] = collections.defaultdict(lambda: Prediction("", collections.defaultdict(list)))
+    stop_codes = []
+
+    for stop in stops:
+        agency = stop.get('operator')
+        stop_code = stop.get('id')
+        stop_codes.append(stop_code)
+
+        params = {
+            'api_key': API_KEY,
+            'agency': agency,
+            'stopCode': stop_code,
+            'format': 'json'
+        }
+
+        with MetricsHandler.api_latency.time():
+            response = requests.get(PREDICTIONS_URL, params=params)
+        logging.debug(f'511`s API response code was {response.status_code}')
+
+        # unsuccessful request to 511 API
+        if response.status_code != 200:
+            MetricsHandler.api_response_codes.labels(response.status_code).inc() 
+            logging.error(f"not parsing response because response code was {response.status_code}")
+            time.sleep(10)
+            return
+
+        # successful request to 511 API
+        MetricsHandler.api_response_codes.labels(response.status_code).inc() 
+
+        content = response.content.decode('utf-8-sig')
+        data = json.loads(content)
+
+        all_incoming_buses = data.get('ServiceDelivery', {}).get('StopMonitoringDelivery', {}).get('MonitoredStopVisit')
+        for bus in all_incoming_buses:
+            route_name = bus.get('MonitoredVehicleJourney', {}).get('LineRef')
+            route_destination = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('DestinationDisplay').title()
+            expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
+                
+            unique_buses[route_name].route = route_name
+            unique_buses[route_name].destinations[route_destination].append(expected_arrival)
+
+    stop_info = Stop(stop_codes, stop_name, list(unique_buses.values()))
+    return stop_info
+
+def add_suffix_to_name(stop):
+    agency_to_stop_suffix = {
+        "BA": "BART",
+    }
+
+    agency = stop.get('operator')
+    stop_name = stop.get("name")
+    # We add a suffix to some stop names to add context.
+    # For example, the BART stop called "Milpitas" becomes
+    # "Milpitas BART"
+    if (agency in agency_to_stop_suffix):
+        stop_name = stop_name + " " + agency_to_stop_suffix.get(agency)
+    
+    return stop_name
 
 def helper_thread():
     while True:

@@ -7,14 +7,17 @@
    ```yml
    api_key: <YOUR API KEY from #1>
    stops:
-     - operator: SC
+    - operator: SC
       name: 10th & Taylor
-      ids: 
-        - 64995
-     - operator: BA
-      name: Berryessa / North San Jose
-      ids: 
-        - BERY
+      id: 64995
+    - group_name: San Jose Diridon Caltrain Station
+      stops:
+        - operator: CT
+          name: San Jose Diridon Caltrain Station Northbound
+          id: 70261
+        - operator: CT
+          name: San Jose Diridon Caltrain Station Southbound
+          id: 70262
    cache_update_interval_minutes: 5
    ```
 
