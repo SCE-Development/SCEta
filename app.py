@@ -77,14 +77,14 @@ def update_cache():
         # check for stop grouping
         if stop.get("group_name"):
             group_name = stop.get("group_name")
-            stop_info = get_stop_predictions(stop.get("stops"), group_name)
+            stop_info = get_stop_predictions(stop.get("stops", []), group_name)
             new_stops.append(stop_info)
+            continue
             
         # otherwise, get predictions for individual stop
-        else:
-            stop_name = add_suffix_to_name(stop)
-            stop_info = get_stop_predictions([stop], stop_name)
-            new_stops.append(stop_info)
+        stop_name = add_suffix_to_name(stop)
+        stop_info = get_stop_predictions([stop], stop_name)
+        new_stops.append(stop_info)
 
     cache.stops = new_stops
     cache.updated_at = datetime.datetime.now(datetime.timezone.utc)
@@ -114,7 +114,7 @@ def get_stop_predictions(stops, stop_name):
             MetricsHandler.api_response_codes.labels(response.status_code).inc() 
             logging.error(f"not parsing response because response code was {response.status_code}")
             time.sleep(10)
-            return
+            continue
 
         # successful request to 511 API
         MetricsHandler.api_response_codes.labels(response.status_code).inc() 
