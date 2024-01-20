@@ -14,8 +14,6 @@ services:
             - ./data.yaml:/server/data.yaml
             - ./app.py:/server/app.py
             - ./modules:/server/modules
-        ports:
-            - 8001:8001
     prometheus:
         image: prom/prometheus:latest
         restart: always
@@ -23,8 +21,6 @@ services:
             - ./prometheus.yml:/etc/prometheus/prometheus.yml
         command:
             - "--config.file=/etc/prometheus/prometheus.yml"
-        ports:
-            - 9090:9090
     nginx:
         container_name: sceta-nginx
         image: nginx:alpine
