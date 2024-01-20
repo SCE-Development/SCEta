@@ -9,7 +9,6 @@ services:
         command:
             - --config=/server/data.yaml
             - --host=0.0.0.0
-            - --port=8001
         volumes:
             - ./data.yaml:/server/data.yaml
             - ./app.py:/server/app.py
