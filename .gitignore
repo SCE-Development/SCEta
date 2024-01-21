@@ -1,5 +1,7 @@
-data.yaml
-data.yml
+*.yaml
+*.yml
+!docker-compose.dev.yml
+!docker-compose.yml
 
 __pycache__
 
