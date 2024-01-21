@@ -1,7 +1,7 @@
 version: "3.8"
 services:
     server:
-        container_name: "sceta-server"
+        container_name: sceta-server
         restart: always
         build:
             dockerfile: ./Dockerfile
@@ -24,6 +24,6 @@ services:
         volumes:
             - ./prometheus.yml:/etc/prometheus/prometheus.yml
         command:
-            - "--config.file=/etc/prometheus/prometheus.yml"
+            - --config.file=/etc/prometheus/prometheus.yml
         ports:
-            - "9090:9090"
+            - 9090:9090
