@@ -30,4 +30,3 @@ networks:
   default:
     external: 
       name: sce
-      
