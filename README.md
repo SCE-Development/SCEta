@@ -2,7 +2,7 @@
 
 1. Request 511 api key from https://511.org/open-data/token
 
-2. Create a data.yml file
+2. Create `data.yaml` file in the same folder as this project
 
    ```yml
    api_key: <YOUR API KEY from #1>
