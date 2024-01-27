@@ -28,6 +28,7 @@ with open(args.config, "r") as stream:
         API_KEY = data.get("api_key", None)
         cache_update_interval = data.get('cache_update_interval_minutes', 1)
         stops = data.get("stops", {})
+        grouped_stops = data.get("grouped_stops", {})
     except Exception:
         logging.exception("unable to open yaml file/ file is missing data, exiting")
         sys.exit(1)
@@ -58,7 +59,7 @@ class Prediction:
 
 @dataclass
 class Stop:
-  ids: []
+  ids: typing.List[str]
   name: str
   predictions: typing.List[Prediction]
 
@@ -74,34 +75,26 @@ def update_cache():
 
     # send post request for each agency's stop(s)
     for stop in stops:
-        # check for stop grouping
-        if stop.get("group_name"):
-            group_name = stop.get("group_name")
-            stop_info = get_stop_predictions(stop.get("stops", []), group_name)
-            new_stops.append(stop_info)
-            continue
-            
-        # otherwise, get predictions for individual stop
+        # get predictions for individual stop
         stop_name = add_suffix_to_name(stop)
-        stop_info = get_stop_predictions([stop], stop_name)
+        stop_info = get_stop_predictions([stop.get('id')], stop.get('operator'), stop_name)
+        new_stops.append(stop_info)
+
+    for group in grouped_stops:
+        stop_info = get_stop_predictions(group.get('ids'), group.get('operator'), group.get('group_name'))
         new_stops.append(stop_info)
 
     cache.stops = new_stops
     cache.updated_at = datetime.datetime.now(datetime.timezone.utc)
 
-def get_stop_predictions(stops, stop_name):
+def get_stop_predictions(stop_ids, operator, stop_name):
     unique_buses: typing.Dict[str, Prediction] = collections.defaultdict(lambda: Prediction("", collections.defaultdict(list)))
-    stop_codes = []
 
-    for stop in stops:
-        agency = stop.get('operator')
-        stop_code = stop.get('id')
-        stop_codes.append(stop_code)
-
+    for stop_id in stop_ids:
         params = {
             'api_key': API_KEY,
-            'agency': agency,
-            'stopCode': stop_code,
+            'agency': operator,
+            'stopCode': stop_id,
             'format': 'json'
         }
 
@@ -131,7 +124,7 @@ def get_stop_predictions(stops, stop_name):
             unique_buses[route_name].route = route_name
             unique_buses[route_name].destinations[route_destination].append(expected_arrival)
 
-    stop_info = Stop(stop_codes, stop_name, list(unique_buses.values()))
+    stop_info = Stop(stop_ids, stop_name, list(unique_buses.values()))
     return stop_info
 
 def add_suffix_to_name(stop):
