@@ -1,20 +1,19 @@
 version: "3.8"
 services:
     frontend:
-        container_name: sceta-frontend
-        restart: 'on-failure'
+        restart: on-failure
         build:
             dockerfile: ./docker/Dockerfile.dev
             context: ./frontend
-        ports:
-            - '3001:3000'
         volumes:
             - ./frontend/package.json:/frontend/package.json
             - ./frontend/src:/frontend/src/
             - ./frontend/public:/frontend/public/
         stdin_open: true
+        environment:
+            - CHOKIDAR_USEPOLLING=true
+            - WATCHPACK_POLLING=true
     server:
-        container_name: sceta-server
         restart: always
         build:
             dockerfile: ./Dockerfile
@@ -23,20 +22,15 @@ services:
             - --config=/server/data.yaml
             - --port=8001
             - -vvv
-        ports:
-            - 8001:8001
         volumes:
             - ./server/data.yaml:/server/data.yaml
             - ./server/app.py:/server/app.py
             - ./server/modules:/server/modules
         environment:
             - WATCHFILES_FORCE_POLLING=true
-    prometheus:
-        image: prom/prometheus:latest
-        restart: always
+    nginx:
+        image: nginx:alpine
         volumes:
-            - ./prometheus.yml:/etc/prometheus/prometheus.yml
-        command:
-            - --config.file=/etc/prometheus/prometheus.yml
+            - ./nginx.conf:/etc/nginx/nginx.conf
         ports:
-            - 9090:9090
+            - 3001:80

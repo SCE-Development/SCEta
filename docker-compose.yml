@@ -1,8 +1,7 @@
 version: "3.8"
 services:
     frontend:
-        container_name: sceta-frontend
-        restart: 'on-failure'
+        restart: on-failure
         build:
             dockerfile: ./docker/Dockerfile.dev
             context: ./frontend
@@ -11,8 +10,9 @@ services:
             - ./frontend/src:/frontend/src/
             - ./frontend/public:/frontend/public/
         stdin_open: true
+        environment:
+            - SCETA_API_PATH=api/predictions
     server:
-        container_name: "sceta-server"
         restart: always
         build:
             dockerfile: ./docker/Dockerfile
@@ -25,15 +25,9 @@ services:
             - ./server/data.yaml:/server/data.yaml
             - ./server/app.py:/server/app.py
             - ./server/modules:/server/modules
-    prometheus:
-        image: prom/prometheus:latest
-        restart: always
-        volumes:
-            - ./prometheus.yml:/etc/prometheus/prometheus.yml
-        command:
-            - "--config.file=/etc/prometheus/prometheus.yml"
+        environment:
+            - WATCHFILES_FORCE_POLLING=true
     nginx:
-        container_name: sceta-nginx
         image: nginx:alpine
         volumes:
             - ./nginx.conf:/etc/nginx/nginx.conf
