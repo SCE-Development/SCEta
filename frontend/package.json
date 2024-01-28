@@ -18,6 +18,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
+  "homepage" : "https://sce.sjsu.edu/transit",
   "eslintConfig": {
     "extends": [
       "react-app",
