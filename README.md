@@ -2,7 +2,7 @@
 
 1. Request 511 api key from https://511.org/open-data/token
 
-2. Create `data.yaml` file in the same folder as this project
+2. Create `data.yaml` file in the `server` folder of this project
 
   ```yml
   api_key: <YOUR API KEY from #1>
@@ -42,12 +42,12 @@
    source sce-venv/bin/activate
    ```
 
-5. Run script
+5. Run script in the project's root directory
 
 - Command line:
 
   ```sh
-  python app.py --host=0.0.0.0 --port=8001 --config=data.yaml
+  python ./server/app.py --host=0.0.0.0 --port=8001 --config=./server/data.yaml
   ```
 
 - Docker:
