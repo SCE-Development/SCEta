@@ -14,10 +14,6 @@ export default function TransitPredictionsPage() {
     return date.toLocaleTimeString([], { hour: 'numeric', minute: 'numeric' });
   };
 
-  /**
-   * SCEta's transit predictions are  disabled by default since you have to run the SCEta server
-   * separately. To enable, go to config.json and set ENABLED under SCEta to true
-   */
   async function getSCEtaPredictions() {
     const predictions = await getTransitPredictions();
     if (predictions.error) {
