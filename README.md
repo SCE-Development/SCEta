@@ -4,15 +4,23 @@
 
 2. Create `data.yaml` file in the same folder as this project
 
-   ```yml
-   api_key: <YOUR API KEY from #1>
-   stops:
-     - operator: SC
-       id: 46573
-     - operator: SC
-       id: 46521
-   cache_update_interval_minutes: 5
-   ```
+  ```yml
+  api_key: <YOUR API KEY from #1>
+  stops:
+    - operator: SC
+      name: 10th & Taylor
+      id: 64995
+    - operator: BA
+      name: Milpitas
+      id: MLPT
+  grouped_stops:
+    - operator: CT
+      group_name: San Jose Diridon Caltrain Station
+      ids:
+        - 70261
+        - 70262
+  cache_update_interval_minutes: 10
+  ```
 
 3. Create virutal env
 

@@ -28,6 +28,7 @@ with open(args.config, "r") as stream:
         API_KEY = data.get("api_key", None)
         cache_update_interval = data.get('cache_update_interval_minutes', 1)
         stops = data.get("stops", {})
+        grouped_stops = data.get("grouped_stops", {})
     except Exception:
         logging.exception("unable to open yaml file/ file is missing data, exiting")
         sys.exit(1)
@@ -54,12 +55,11 @@ metrics_handler = MetricsHandler.instance()
 @dataclass
 class Prediction:
   route: str
-  destination: str
-  times: typing.List[str]
+  destinations: typing.Dict[str, typing.List[str]]
 
 @dataclass
 class Stop:
-  id: str
+  ids: typing.List[str]
   name: str
   predictions: typing.List[Prediction]
 
@@ -71,32 +71,37 @@ class Cache:
 PREDICTIONS_URL = 'https://api.511.org/transit/StopMonitoring'
 cache = Cache([], '')
 def update_cache():
-    agency_to_stop_suffix = {
-        "BA": "BART",
-    }
     new_stops = []
 
     # send post request for each agency's stop(s)
     for stop in stops:
-        agency = stop.get('operator')
-        stopCode = stop.get('id')
-        stopName= stop.get('name')
-        # We add a suffix to some stop names to add context.
-        # For example, the BART stop called "Milpitas" becomes
-        # "Milpitas BART"
-        if (agency in agency_to_stop_suffix):
-            stopName = stopName + " " + agency_to_stop_suffix.get(agency)
+        # get predictions for individual stop
+        stop_name = add_suffix_to_name(stop)
+        stop_info = get_stop_predictions([stop.get('id')], stop.get('operator'), stop_name)
+        new_stops.append(stop_info)
 
+    for group in grouped_stops:
+        stop_info = get_stop_predictions(group.get('ids'), group.get('operator'), group.get('group_name'))
+        new_stops.append(stop_info)
+
+    cache.stops = new_stops
+    cache.updated_at = datetime.datetime.now(datetime.timezone.utc)
+
+def get_stop_predictions(stop_ids, operator, stop_name):
+    unique_buses: typing.Dict[str, Prediction] = collections.defaultdict(lambda: Prediction("", collections.defaultdict(list)))
+
+    for stop_id in stop_ids:
         params = {
             'api_key': API_KEY,
-            'agency': agency,
-            'stopCode': stopCode,
+            'agency': operator,
+            'stopCode': stop_id,
             'format': 'json'
         }
 
         with MetricsHandler.api_latency.time():
             response = requests.get(PREDICTIONS_URL, params=params)
         logging.debug(f'511`s API response code was {response.status_code}')
+
         # unsuccessful request to 511 API
         if response.status_code != 200:
             MetricsHandler.api_response_codes.labels(response.status_code).inc() 
@@ -111,22 +116,31 @@ def update_cache():
         data = json.loads(content)
 
         all_incoming_buses = data.get('ServiceDelivery', {}).get('StopMonitoringDelivery', {}).get('MonitoredStopVisit')
-        unique_buses: typing.Dict[str, Prediction] = collections.defaultdict(lambda: Prediction("", "", []))
         for bus in all_incoming_buses:
             route_name = bus.get('MonitoredVehicleJourney', {}).get('LineRef')
             route_destination = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('DestinationDisplay').title()
             expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
-            
-            route_key = (route_name, route_destination)
-            unique_buses[route_key].route = route_name
-            unique_buses[route_key].destination = route_destination
-            unique_buses[route_key].times.append(expected_arrival)
+                
+            unique_buses[route_name].route = route_name
+            unique_buses[route_name].destinations[route_destination].append(expected_arrival)
 
-        stopInfo = Stop(stopCode, stopName, list(unique_buses.values()))
-        new_stops.append(stopInfo)
+    stop_info = Stop(stop_ids, stop_name, list(unique_buses.values()))
+    return stop_info
 
-    cache.stops = new_stops
-    cache.updated_at = datetime.datetime.now(datetime.timezone.utc)
+def add_suffix_to_name(stop):
+    agency_to_stop_suffix = {
+        "BA": "BART",
+    }
+
+    agency = stop.get('operator')
+    stop_name = stop.get("name")
+    # We add a suffix to some stop names to add context.
+    # For example, the BART stop called "Milpitas" becomes
+    # "Milpitas BART"
+    if (agency in agency_to_stop_suffix):
+        stop_name = stop_name + " " + agency_to_stop_suffix.get(agency)
+    
+    return stop_name
 
 def helper_thread():
     while True:
