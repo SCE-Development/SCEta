@@ -118,8 +118,17 @@ def get_stop_predictions(stop_ids, operator, stop_name):
         all_incoming_buses = data.get('ServiceDelivery', {}).get('StopMonitoringDelivery', {}).get('MonitoredStopVisit')
         for bus in all_incoming_buses:
             route_name = bus.get('MonitoredVehicleJourney', {}).get('LineRef')
-            route_destination = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('DestinationDisplay').title()
-            expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
+            monitored_call = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {})
+
+            route_destination = monitored_call.get('DestinationDisplay')
+
+            # handle potential null destination error
+            if route_destination is not None:
+                route_destination = route_destination.title()
+            else:
+                route_destination = "Unknown Destination"
+
+            expected_arrival = monitored_call.get('AimedArrivalTime')
                 
             unique_buses[route_name].route = route_name
             unique_buses[route_name].destinations[route_destination].append(expected_arrival)
@@ -144,9 +153,13 @@ def add_suffix_to_name(stop):
 
 def helper_thread():
     while True:
-        update_cache()
-        logging.debug("helper thread updated cache with predictions")
-        MetricsHandler.cache_last_updated.set(int(time.time()))
+        try:
+            update_cache()
+            logging.debug("helper thread updated cache with predictions")
+            MetricsHandler.cache_last_updated.set(int(time.time()))
+        except Exception as e:
+            logging.exception(f"Exception in helper_thread: {e}")
+            continue
         time.sleep(60 * cache_update_interval)
 
 # middleware to get metrics on HTTP response codes
