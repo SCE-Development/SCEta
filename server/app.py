@@ -148,8 +148,8 @@ def helper_thread():
             update_cache()
             logging.debug("helper thread updated cache with predictions")
             MetricsHandler.cache_last_updated.set(int(time.time()))
-        except Exception as e:
-            logging.exception(f"Exception in helper_thread: {e}")
+        except Exception:
+            logging.exception("Unable to update cache")
             continue
         time.sleep(60 * cache_update_interval)
 
