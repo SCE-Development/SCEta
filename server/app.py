@@ -150,6 +150,7 @@ def helper_thread():
             MetricsHandler.cache_last_updated.set(int(time.time()))
         except Exception:
             logging.exception("Unable to update cache")
+            MetricsHandler.cache_update_errors.inc() 
             continue
         time.sleep(60 * cache_update_interval)
 

@@ -20,6 +20,11 @@ class Metrics(enum.Enum):
         "Timestamp of when our cache was last updated",
         prometheus_client.Gauge,
     )
+    CACHE_UPDATE_ERRORS = (
+        "cache_update_errors",
+        "Number of times the cache fails to update",
+        prometheus_client.Counter,
+    )
     HTTP_CODE = (
         "http_code",
         "Count of each HTTP Response code",
