@@ -118,7 +118,7 @@ def get_stop_predictions(stop_ids, operator, stop_name):
         all_incoming_buses = data.get('ServiceDelivery', {}).get('StopMonitoringDelivery', {}).get('MonitoredStopVisit')
         for bus in all_incoming_buses:
             route_name = bus.get('MonitoredVehicleJourney', {}).get('LineRef')
-            route_destination = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('DestinationDisplay').title()
+            route_destination = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('DestinationDisplay', 'Unknown Destination').title()
             expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
                 
             unique_buses[route_name].route = route_name
@@ -144,9 +144,14 @@ def add_suffix_to_name(stop):
 
 def helper_thread():
     while True:
-        update_cache()
-        logging.debug("helper thread updated cache with predictions")
-        MetricsHandler.cache_last_updated.set(int(time.time()))
+        try:
+            update_cache()
+            logging.debug("helper thread updated cache with predictions")
+            MetricsHandler.cache_last_updated.set(int(time.time()))
+        except Exception:
+            logging.exception("Unable to update cache")
+            MetricsHandler.cache_update_errors.inc() 
+            continue
         time.sleep(60 * cache_update_interval)
 
 # middleware to get metrics on HTTP response codes
