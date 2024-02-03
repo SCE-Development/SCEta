@@ -23,7 +23,7 @@ services:
             - --port=8001
             - -vvv
         volumes:
-            - ./server/data.yaml:/server/data.yaml
+            - ./server/data.yaml:/server/data.yaml:ro
             - ./server/app.py:/server/app.py
             - ./server/modules:/server/modules
         environment:
@@ -35,8 +35,6 @@ services:
             - ./prometheus.yml:/etc/prometheus/prometheus.yml
         command:
             - --config.file=/etc/prometheus/prometheus.yml
-        ports:
-            - 9090:9090
     nginx:
         image: nginx:alpine
         volumes:

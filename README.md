@@ -72,3 +72,4 @@ Make sure you have Docker installed on your device
 3. Now, you can access SCEta's frontend and backend data from `localhost:3001`
 - To view the frontend, go to `localhost:3001`
 - To view transit predictions from the server, go to `localhost:3001/api/predictions`
+- To view metrics, go to `localhost:3001/prometheus/graph`
