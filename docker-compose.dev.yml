@@ -3,7 +3,7 @@ services:
     frontend:
         restart: on-failure
         build:
-            dockerfile: ./docker/Dockerfile
+            dockerfile: ./docker/Dockerfile.dev
             context: ./frontend
         volumes:
             - ./frontend/package.json:/frontend/package.json
