@@ -10,8 +10,6 @@ services:
             - ./frontend/src:/frontend/src/
             - ./frontend/public:/frontend/public/
         stdin_open: true
-        environment:
-            - SCETA_API_PATH=api/predictions
     server:
         restart: always
         build:
