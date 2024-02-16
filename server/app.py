@@ -33,6 +33,17 @@ with open(args.config, "r") as stream:
         logging.exception("unable to open yaml file/ file is missing data, exiting")
         sys.exit(1)
 
+try:
+    fixed_stops = {}
+    with open(args.fixed_stops, "r") as stream:
+        try:
+            data = json.load(stream)
+            fixed_stops = data.get("fixed_stops")
+        except Exception:
+            logging.exception("unable to load JSON file")
+except Exception:
+    logging.debug("JSON file with fixed stops was not provided")
+
 logging.Formatter.converter = time.gmtime
 
 formatter = logging.basicConfig(
@@ -82,6 +93,11 @@ def update_cache():
 
     for group in grouped_stops:
         stop_info = get_stop_predictions(group.get('ids'), group.get('operator'), group.get('group_name'))
+        new_stops.append(stop_info)
+
+    for stop in fixed_stops:
+        stop_preds = [Prediction(pred["route"], pred["destinations"]) for pred in stop.get("predictions", {})]
+        stop_info = Stop(stop.get("ids"), stop.get("name"), list(stop_preds))
         new_stops.append(stop_info)
 
     cache.stops = new_stops
