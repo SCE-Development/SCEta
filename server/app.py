@@ -96,8 +96,7 @@ def update_cache():
         new_stops.append(stop_info)
 
     for stop in fixed_stops:
-        stop_preds = [Prediction(pred["route"], pred["destinations"]) for pred in stop.get("predictions", {})]
-        stop_info = Stop(stop.get("ids"), stop.get("name"), list(stop_preds))
+        stop_info = Stop(stop.get("ids"), stop.get("name"), [Prediction(pred["route"], pred["destinations"]) for pred in stop.get("predictions", {})])
         new_stops.append(stop_info)
 
     cache.stops = new_stops

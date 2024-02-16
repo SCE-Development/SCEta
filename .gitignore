@@ -1,5 +1,6 @@
 *.yaml
 *.yml
+*.json
 !docker-compose.dev.yml
 !docker-compose.yml
 
