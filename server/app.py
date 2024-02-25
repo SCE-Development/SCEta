@@ -121,6 +121,7 @@ def get_stop_predictions(stop_ids, operator, stop_name):
             expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
             route_destination = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('DestinationDisplay')
             if route_destination is None:
+                MetricsHandler.null_destinations_seen.labels(stop_id).inc()
                 route_destination = 'Unknown Destination'
             
             # cast to String in case destination is a different data type

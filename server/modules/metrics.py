@@ -25,6 +25,12 @@ class Metrics(enum.Enum):
         "Number of times the cache fails to update",
         prometheus_client.Counter,
     )
+    NULL_DESTINATIONS_SEEN = (
+        "null_destinations_seen",
+        "Number of times 511 API returns a null destination",
+        prometheus_client.Counter,
+        ['stop_id']
+    )
     HTTP_CODE = (
         "http_code",
         "Count of each HTTP Response code",
