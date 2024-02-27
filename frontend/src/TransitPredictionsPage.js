@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getTransitPredictions } from './APIFunctions/SCEta';
+import { formatTimeToDate } from './util/formatTimeToDate';
 import RouteCard from './Components/RouteCard';
 
 export default function TransitPredictionsPage() {
@@ -8,11 +9,6 @@ export default function TransitPredictionsPage() {
   const [timeAtMount, setTimeAtMount] = useState();
   const [selectedStop, setSelectedStop] = useState();
   const [stopOptions, setStopOptions] = useState([]);
-
-  const formatTimeToDate = (time) => {
-    const date = new Date(time);
-    return date.toLocaleTimeString([], { hour: 'numeric', minute: 'numeric' });
-  };
 
   async function getSCEtaPredictions() {
     const predictions = await getTransitPredictions();

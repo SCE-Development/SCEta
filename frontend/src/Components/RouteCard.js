@@ -1,9 +1,5 @@
 import React from 'react';
-
-const formatTimeToDate = (time) => {
-  const date = new Date(time);
-  return date.toLocaleTimeString([], { hour: 'numeric', minute: 'numeric' });
-};
+import { formatTimeToDate } from '../util/formatTimeToDate';
 
 // filters out stops in the past (used for fixed stop data)
 // ex. it's 9PM, so the ACE Train's stop at 3PM shouldn't appear
