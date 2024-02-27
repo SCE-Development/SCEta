@@ -108,7 +108,6 @@ export default function TransitPredictionsPage() {
                           key={index}
                           route={prediction.route}
                           destinations={prediction.destinations}
-                          formatTimeToDate={formatTimeToDate}
                         />
                       ))}
                   </div>
