@@ -83,6 +83,7 @@ PREDICTIONS_URL = 'https://api.511.org/transit/StopMonitoring'
 cache = Cache([], '')
 def update_cache():
     new_stops = []
+    cache.updated_at = datetime.datetime.now(datetime.timezone.utc)
 
     # send post request for each agency's stop(s)
     for stop in stops:
@@ -96,11 +97,22 @@ def update_cache():
         new_stops.append(stop_info)
 
     for stop in fixed_stops:
-        stop_info = Stop(stop.get("ids"), stop.get("name"), [Prediction(pred["route"], pred["destinations"]) for pred in stop.get("predictions", {})])
+        filtered_predictions = []
+        
+        for pred in stop.get("predictions", {}):
+            filtered_destinations = {}
+            for location, times in pred["destinations"].items():
+                filtered_times = [time for time in times if datetime.datetime.fromisoformat(time.replace('Z', '+00:00')) > cache.updated_at]
+                if filtered_times:
+                    filtered_destinations[location] = filtered_times
+            
+            if filtered_destinations:
+                filtered_predictions.append(Prediction(pred["route"], filtered_destinations))
+
+        stop_info = Stop(stop.get("ids"), stop.get("name"), filtered_predictions)
         new_stops.append(stop_info)
 
     cache.stops = new_stops
-    cache.updated_at = datetime.datetime.now(datetime.timezone.utc)
 
 def get_stop_predictions(stop_ids, operator, stop_name):
     unique_buses: typing.Dict[str, Prediction] = collections.defaultdict(lambda: Prediction("", collections.defaultdict(list)))
