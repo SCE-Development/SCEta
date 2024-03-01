@@ -10,6 +10,7 @@ import typing
 
 from fastapi import FastAPI, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
+import pytz
 import prometheus_client
 import requests
 import uvicorn
@@ -37,8 +38,7 @@ try:
     fixed_stops = {}
     with open(args.fixed_stops, "r") as stream:
         try:
-            data = json.load(stream)
-            fixed_stops = data.get("fixed_stops")
+            fixed_stops = json.load(stream).items()
         except Exception:
             logging.exception("unable to load JSON file")
 except Exception:
@@ -96,22 +96,18 @@ def update_cache():
         stop_info = get_stop_predictions(group.get('ids'), group.get('operator'), group.get('group_name'))
         new_stops.append(stop_info)
 
-    for stop in fixed_stops:
-        filtered_predictions = []
+    # ACE Rail Predictions
+    filtered_destinations = {}
+    for location, times in fixed_stops:
+        # filter times b/c we don't want predictions that already passed
+        pst = pytz.timezone('America/Los_Angeles')
+        filtered_times = [time for time in times if datetime.datetime.fromisoformat(time.replace('Z', '+00:00')).astimezone(pst).time() > cache.updated_at.astimezone(pst).time()]
+        if filtered_times:
+            filtered_destinations[location] = filtered_times
+
+    stop_info = Stop([], "ACE Rail", [Prediction("ACE Train", filtered_destinations)])
+    new_stops.append(stop_info)
         
-        for pred in stop.get("predictions", {}):
-            filtered_destinations = {}
-            for location, times in pred["destinations"].items():
-                filtered_times = [time for time in times if datetime.datetime.fromisoformat(time.replace('Z', '+00:00')) > cache.updated_at]
-                if filtered_times:
-                    filtered_destinations[location] = filtered_times
-            
-            if filtered_destinations:
-                filtered_predictions.append(Prediction(pred["route"], filtered_destinations))
-
-        stop_info = Stop(stop.get("ids"), stop.get("name"), filtered_predictions)
-        new_stops.append(stop_info)
-
     cache.stops = new_stops
 
 def get_stop_predictions(stop_ids, operator, stop_name):
