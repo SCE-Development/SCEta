@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getTransitPredictions } from './APIFunctions/SCEta';
-import { formatTimeToDate } from './util/formatTimeToDate';
+import { formatTime } from './util/formatTime';
 import RouteCard from './Components/RouteCard';
 
 export default function TransitPredictionsPage() {
@@ -16,7 +16,7 @@ export default function TransitPredictionsPage() {
       setError(predictions.responseData);
     } else {
       setBusData(predictions.responseData.stops);
-      setTimeAtMount(formatTimeToDate(predictions.responseData.updated_at));
+      setTimeAtMount(formatTime(predictions.responseData.updated_at));
     }
   }
 

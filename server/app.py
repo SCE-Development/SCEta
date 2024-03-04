@@ -34,15 +34,14 @@ with open(args.config, "r") as stream:
         logging.exception("unable to open yaml file/ file is missing data, exiting")
         sys.exit(1)
 
+fixed_stops = []
 try:
-    fixed_stops = {}
     with open(args.fixed_stops, "r") as stream:
-        try:
-            fixed_stops = json.load(stream).items()
-        except Exception:
-            logging.exception("unable to load JSON file")
+        fixed_stops = json.load(stream)
+except FileNotFoundError:
+    logging.debug("JSON file with fixed stops was not provided, skipping")
 except Exception:
-    logging.debug("JSON file with fixed stops was not provided")
+    logging.exception("unable to load JSON file")
 
 logging.Formatter.converter = time.gmtime
 
@@ -79,11 +78,12 @@ class Cache:
   stops: typing.List[Stop]
   updated_at: str
 
+pst = pytz.timezone('America/Los_Angeles') 
 PREDICTIONS_URL = 'https://api.511.org/transit/StopMonitoring'
 cache = Cache([], '')
 def update_cache():
     new_stops = []
-    cache.updated_at = datetime.datetime.now(datetime.timezone.utc)
+    cache.updated_at = datetime.datetime.now(datetime.timezone.utc).astimezone(pst).time()
 
     # send post request for each agency's stop(s)
     for stop in stops:
@@ -96,14 +96,8 @@ def update_cache():
         stop_info = get_stop_predictions(group.get('ids'), group.get('operator'), group.get('group_name'))
         new_stops.append(stop_info)
 
-    # ACE Rail Predictions
-    filtered_destinations = {}
-    for location, times in fixed_stops:
-        # filter times b/c we don't want predictions that already passed
-        pst = pytz.timezone('America/Los_Angeles')
-        filtered_times = [time for time in times if datetime.datetime.fromisoformat(time.replace('Z', '+00:00')).astimezone(pst).time() > cache.updated_at.astimezone(pst).time()]
-        if filtered_times:
-            filtered_destinations[location] = filtered_times
+    # ACE Rail Predictions (San Jose times are stored in PST)
+    filtered_destinations = {'San Jose' : [time for time in fixed_stops if datetime.datetime.strptime(time, "%H:%M:%S").time() > cache.updated_at]}
 
     stop_info = Stop([], "ACE Rail", [Prediction("ACE Train", filtered_destinations)])
     new_stops.append(stop_info)
@@ -141,7 +135,8 @@ def get_stop_predictions(stop_ids, operator, stop_name):
         all_incoming_buses = data.get('ServiceDelivery', {}).get('StopMonitoringDelivery', {}).get('MonitoredStopVisit')
         for bus in all_incoming_buses:
             route_name = bus.get('MonitoredVehicleJourney', {}).get('LineRef')
-            expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
+            if (expected_arrival := bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')):
+                expected_arrival = datetime.datetime.fromisoformat(expected_arrival).astimezone(pst).time()
             route_destination = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('DestinationDisplay')
             if route_destination is None:
                 MetricsHandler.null_destinations_seen.labels(stop_id).inc()
