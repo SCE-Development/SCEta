@@ -81,7 +81,7 @@ PREDICTIONS_URL = 'https://api.511.org/transit/StopMonitoring'
 cache = Cache([], '')
 def update_cache():
     new_stops = []
-    cache.updated_at = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.timezone.utc)
 
     # send post request for each agency's stop(s)
     for stop in stops:
@@ -104,8 +104,8 @@ def update_cache():
         ).replace(tzinfo=datetime.timezone.utc)
 
         # give the parsed departure time a date of today
-        dt = dt.replace(day=cache.updated_at.day, month=cache.updated_at.month, year=cache.updated_at.year)
-        diff = dt - cache.updated_at
+        dt = dt.replace(day=now.day, month=now.month, year=now.year)
+        diff = dt - now
 
         # if the departure appears to be BEFORE the present moment
         # move the departure time ahead a day.
@@ -114,16 +114,17 @@ def update_cache():
         # next train as coming tomorrow in UTC and recalculate the diff
         if diff.days < 0:
             dt = dt.replace(day=dt.day + 1)
-            diff = dt - cache.updated_at
+            diff = dt - now
         
-        # if the difference is under 120 minutes, add it
-        if diff.seconds // 60 < 120:
+        # if the difference is positive and under 120 minutes, add it
+        if 0 < diff.seconds // 60 < 120:
             filtered_times.append(dt)
 
-    stop_info = Stop([], "ACE Rail", [Prediction("ACE Train", {'San Jose' : filtered_times})] if filtered_times else [])
+    stop_info = Stop([73752], "ACE Rail", [Prediction("ACE Train", {'San Jose' : filtered_times})] if filtered_times else [])
     new_stops.append(stop_info)
-        
+    
     cache.stops = new_stops
+    cache.updated_at = now
 
 def get_stop_predictions(stop_ids, operator, stop_name):
     unique_buses: typing.Dict[str, Prediction] = collections.defaultdict(lambda: Prediction("", collections.defaultdict(list)))
