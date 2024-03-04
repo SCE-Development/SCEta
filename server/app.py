@@ -92,36 +92,13 @@ def update_cache():
 
     for group in grouped_stops:
         stop_info = get_stop_predictions(group.get('ids'), group.get('operator'), group.get('group_name'))
+
+        # ACE Rail Predictions
+        if group.get('group_name') == 'San Jose Diridon Caltrain Station': 
+            if predictions := get_fixed_stops_predictions(now, "ACE Train", "Stockton"):
+                stop_info.predictions.append(predictions)
+
         new_stops.append(stop_info)
-
-    # ACE Rail Predictions
-    filtered_times = []
-    TIMESTAMP_FORMAT = "%H:%M:%S"
-    for time in fixed_stops:
-        dt = datetime.datetime.strptime(
-            time,
-            TIMESTAMP_FORMAT,
-        ).replace(tzinfo=datetime.timezone.utc)
-
-        # give the parsed departure time a date of today
-        dt = dt.replace(day=now.day, month=now.month, year=now.year)
-        diff = dt - now
-
-        # if the departure appears to be BEFORE the present moment
-        # move the departure time ahead a day.
-        # for example it was 4PM Pacific (11pm UTC) and we observed the next
-        # train (12am UTC) before. this is wrong. so we should interpret the
-        # next train as coming tomorrow in UTC and recalculate the diff
-        if diff.days < 0:
-            dt = dt.replace(day=dt.day + 1)
-            diff = dt - now
-        
-        # if the difference is positive and under 120 minutes, add it
-        if 0 < diff.seconds // 60 < 120:
-            filtered_times.append(dt)
-
-    stop_info = Stop([73752], "ACE Rail", [Prediction("ACE Train", {'San Jose' : filtered_times})] if filtered_times else [])
-    new_stops.append(stop_info)
     
     cache.stops = new_stops
     cache.updated_at = now
@@ -171,6 +148,32 @@ def get_stop_predictions(stop_ids, operator, stop_name):
 
     stop_info = Stop(stop_ids, stop_name, list(unique_buses.values()))
     return stop_info
+
+def get_fixed_stops_predictions(now, route, destination):
+    filtered_times = []
+    TIMESTAMP_FORMAT = "%H:%M:%S"
+
+    for time in fixed_stops:
+        dt = datetime.datetime.strptime(time, TIMESTAMP_FORMAT).replace(tzinfo=datetime.timezone.utc)
+
+        # give the parsed departure time a date of today
+        dt = dt.replace(day=now.day, month=now.month, year=now.year)
+        diff = dt - now
+
+        # if the departure appears to be BEFORE the present moment
+        # move the departure time ahead a day.
+        # for example, it was 4 PM Pacific (11 pm UTC) and we observed the next
+        # train (12 am UTC) before. this is wrong. so we should interpret the
+        # next train as coming tomorrow in UTC and recalculate the diff
+        if diff.days < 0:
+            dt = dt.replace(day=dt.day + 1)
+            diff = dt - now
+
+        # if the difference is positive and under 120 minutes, add it
+        if 0 < diff.seconds // 60 < 120:
+            filtered_times.append(dt)
+
+    return Prediction(route, {destination: filtered_times}) if filtered_times else None
 
 def add_suffix_to_name(stop):
     agency_to_stop_suffix = {
