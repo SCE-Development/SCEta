@@ -21,7 +21,7 @@ services:
         command:
             - --config=/server/data.yaml
             - --port=8001
-            - --fixed_stops=/server/fixed_stops.json
+            - --fixed-stops=/server/fixed_stops.json
             - -vvv
         volumes:
             - ./server/data.yaml:/server/data.yaml:ro
