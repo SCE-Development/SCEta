@@ -10,7 +10,6 @@ import typing
 
 from fastapi import FastAPI, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
-import pytz
 import prometheus_client
 import requests
 import uvicorn
@@ -77,13 +76,12 @@ class Stop:
 class Cache:
   stops: typing.List[Stop]
   updated_at: str
-
-pst = pytz.timezone('America/Los_Angeles') 
+  
 PREDICTIONS_URL = 'https://api.511.org/transit/StopMonitoring'
 cache = Cache([], '')
 def update_cache():
     new_stops = []
-    cache.updated_at = datetime.datetime.now(datetime.timezone.utc).astimezone(pst).time()
+    cache.updated_at = datetime.datetime.now(datetime.timezone.utc)
 
     # send post request for each agency's stop(s)
     for stop in stops:
@@ -96,10 +94,33 @@ def update_cache():
         stop_info = get_stop_predictions(group.get('ids'), group.get('operator'), group.get('group_name'))
         new_stops.append(stop_info)
 
-    # ACE Rail Predictions (San Jose times are stored in PST)
-    filtered_destinations = {'San Jose' : [time for time in fixed_stops if datetime.datetime.strptime(time, "%H:%M:%S").time() > cache.updated_at]}
+    # ACE Rail Predictions
+    filtered_times = []
+    TIMESTAMP_FORMAT = "%H:%M:%S"
+    for time in fixed_stops:
+        dt = datetime.datetime.strptime(
+            time,
+            TIMESTAMP_FORMAT,
+        ).replace(tzinfo=datetime.timezone.utc)
 
-    stop_info = Stop([], "ACE Rail", [Prediction("ACE Train", filtered_destinations)])
+        # give the parsed departure time a date of today
+        dt = dt.replace(day=cache.updated_at.day, month=cache.updated_at.month, year=cache.updated_at.year)
+        diff = dt - cache.updated_at
+
+        # if the departure appears to be BEFORE the present moment
+        # move the departure time ahead a day.
+        # for example it was 4PM Pacific (11pm UTC) and we observed the next
+        # train (12am UTC) before. this is wrong. so we should interpret the
+        # next train as coming tomorrow in UTC and recalculate the diff
+        if diff.days < 0:
+            dt = dt.replace(day=dt.day + 1)
+            diff = dt - cache.updated_at
+        
+        # if the difference is under 120 minutes, add it
+        if diff.seconds // 60 < 120:
+            filtered_times.append(dt)
+
+    stop_info = Stop([], "ACE Rail", [Prediction("ACE Train", {'San Jose' : filtered_times})] if filtered_times else [])
     new_stops.append(stop_info)
         
     cache.stops = new_stops
@@ -135,8 +156,7 @@ def get_stop_predictions(stop_ids, operator, stop_name):
         all_incoming_buses = data.get('ServiceDelivery', {}).get('StopMonitoringDelivery', {}).get('MonitoredStopVisit')
         for bus in all_incoming_buses:
             route_name = bus.get('MonitoredVehicleJourney', {}).get('LineRef')
-            if (expected_arrival := bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')):
-                expected_arrival = datetime.datetime.fromisoformat(expected_arrival).astimezone(pst).time()
+            expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
             route_destination = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('DestinationDisplay')
             if route_destination is None:
                 MetricsHandler.null_destinations_seen.labels(stop_id).inc()

@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatTime} from '../util/formatTime';
+import { formatDateToTime } from '../util/formatDateToTime';
 
 export default function RouteCard({ route, destinations }) {
   return (
@@ -18,7 +18,7 @@ export default function RouteCard({ route, destinations }) {
             <span>
               {times.map((time, timeIndex) => (
                 <span key={timeIndex}>
-                  {formatTime(time)} {timeIndex !== times.length - 1 && ', '}
+                  {formatDateToTime(time)} {timeIndex !== times.length - 1 && ', '}
                 </span>
               ))}
             </span>
