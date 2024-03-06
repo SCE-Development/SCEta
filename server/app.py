@@ -93,13 +93,13 @@ def update_cache():
     for group in grouped_stops:
         stop_info = get_stop_predictions(group.get('ids'), group.get('operator'), group.get('group_name'))
 
-        # ACE Rail Predictions
-        if group.get('group_name') == 'San Jose Diridon Caltrain Station': 
-            if predictions := get_fixed_stops_predictions(now, "ACE Train", "Stockton"):
-                stop_info.predictions.append(predictions)
+        if group.get('timetables'):
+            for timetable in group.get('timetables', []):
+                if predictions := get_fixed_stops_predictions(now, timetable.get('route_name'), timetable.get('destination')):
+                    stop_info.predictions.append(predictions)
 
         new_stops.append(stop_info)
-    
+
     cache.stops = new_stops
     cache.updated_at = now
 
