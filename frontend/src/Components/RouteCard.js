@@ -1,6 +1,7 @@
 import React from 'react';
+import { formatDateToTime } from '../util/formatDateToTime';
 
-export default function RouteCard({ route, destinations, formatTimeToDate }) {
+export default function RouteCard({ route, destinations }) {
   return (
     <div className="mb-4">
       <b className="badge badge-lg badge-primary rounded-md h-[3rem] mb-1 text-white text-2xl md:text-3xl">{route}</b>
@@ -16,14 +17,15 @@ export default function RouteCard({ route, destinations, formatTimeToDate }) {
             <span>{destination}</span>
             <span>
               {times.map((time, timeIndex) => (
-                <span key={timeIndex}>{formatTimeToDate(time)} {timeIndex !== times.length - 1 && ', '}</span>
+                <span key={timeIndex}>
+                  {formatDateToTime(time)} {timeIndex !== times.length - 1 && ', '}
+                </span>
               ))}
             </span>
             <div className="col-span-2 m-0 divider"/>
           </div>
         </div>
       ))}
-
     </div>
   );
 }

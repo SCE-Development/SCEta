@@ -21,11 +21,13 @@ services:
         command:
             - --config=/server/data.yaml
             - --port=8001
+            - --fixed-stops=/server/fixed_stops.json
             - -vvv
         volumes:
             - ./server/data.yaml:/server/data.yaml:ro
             - ./server/app.py:/server/app.py
             - ./server/modules:/server/modules
+            - ./server/fixed_stops.json:/server/fixed_stops.json:ro
         environment:
             - WATCHFILES_FORCE_POLLING=true
     prometheus:
