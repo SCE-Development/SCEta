@@ -100,9 +100,9 @@ export default function TransitPredictionsPage() {
           ))}
         </div>
         <div>
-          {!!busData.length && busData.map((stop) => (
+          {!!busData.length && busData.map((stop, index) => (
             stop.name === selectedStop &&
-              <div key={stop.route} className="flex flex-col mt-4 p-6 min-w-80 max-h-[55vh] text-xl overflow-y-auto
+              <div key={index} className="flex flex-col mt-4 p-6 min-w-80 max-h-[55vh] text-xl overflow-y-auto
                 bg-white rounded-lg border border-gray-200 shadow-md dark:bg-gray-800 dark:border-gray-700">
                 <div key={stop.name} className="font-bold text-4xl mb-10">{stop.name}</div>
                 {stop.predictions.length === 0 ? (
@@ -111,9 +111,9 @@ export default function TransitPredictionsPage() {
                   <div>
                     {stop.predictions
                       .sort((a, b) => a.route.localeCompare(b.route))
-                      .map((prediction, index) => (
+                      .map((prediction, predictionIndex) => (
                         <RouteCard
-                          key={index}
+                          key={predictionIndex}
                           route={prediction.route}
                           destinations={prediction.destinations}
                         />
