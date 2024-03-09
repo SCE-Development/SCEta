@@ -28,19 +28,31 @@ export default function TransitPredictionsPage() {
   useEffect(() => {
     let uniqueStops = [];
     if (busData) {
-      busData.map((stop) => {
+      busData.forEach((stop) => {
         if (!uniqueStops.includes(stop.name)) {
           uniqueStops.push(stop.name);
         }
 
-        // set selectedStop to the first unique destination (if it's null)
+        // if hash exists, set the corresponding tab
+        // otherwise, set tab to the first unique destination + add URL hash
         if (!selectedStop && uniqueStops.length > 0) {
-          setSelectedStop(uniqueStops[0]);
+          let decodedHash = decodeURIComponent(window.location.hash).replace(/^#/, '')
+          if (decodedHash.length > 0 && uniqueStops.includes(decodedHash)) {
+            setSelectedStop(decodedHash)
+          } else if (!decodedHash.length) {
+            setSelectedStop(uniqueStops[0]);
+            window.location.hash = encodeURIComponent(uniqueStops[0])
+          }
         }
       });
     }
     setStopOptions(uniqueStops);
-  }, [busData]);
+  }, [busData, selectedStop]);
+
+  const changeTab = (newStop) => {
+    window.location.hash = encodeURIComponent(newStop)
+    setSelectedStop(newStop);
+  };
 
   if (error) {
     return (
@@ -68,7 +80,7 @@ export default function TransitPredictionsPage() {
         </div>
         {/* Dropdown for smaller screens */}
         <div className="md:hidden flex flex-col justify-center space-x-4 overflow-x-auto">
-          <select value={selectedStop} onChange={(e) => setSelectedStop(e.target.value)}
+          <select value={selectedStop} onChange={(e) => changeTab(e.target.value)}
             className="px-4 py-2 text-xl font-semibold border-b-2 outline-none bg-gray-800">
             {stopOptions.map((stopName) => (
               <option key={stopName} value={stopName}>
@@ -79,10 +91,10 @@ export default function TransitPredictionsPage() {
         </div>
         {/* Tabs for larger screens */}
         <div className="hidden md:flex flex-row justify-center space-x-4 overflow-x-auto">
-          {stopOptions.map((stopName) => (
-            <button key={stopName} className={`px-4 py-2 text-xl font-semibold border-b-2 
+          {stopOptions.map((stopName, index) => (
+            <button key={index} className={`px-4 py-2 text-xl font-semibold border-b-2 
             ${selectedStop === stopName ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:border-gray-300'}`}
-            onClick={() => setSelectedStop(stopName)}>
+            onClick={() => changeTab(stopName)}>
               {stopName}
             </button>
           ))}
@@ -92,7 +104,7 @@ export default function TransitPredictionsPage() {
             stop.name === selectedStop &&
               <div key={stop.route} className="flex flex-col mt-4 p-6 min-w-80 max-h-[55vh] text-xl overflow-y-auto
                 bg-white rounded-lg border border-gray-200 shadow-md dark:bg-gray-800 dark:border-gray-700">
-                <div className="font-bold text-4xl mb-10">{stop.name}</div>
+                <div key={stop.name} className="font-bold text-4xl mb-10">{stop.name}</div>
                 {stop.predictions.length === 0 ? (
                   <span className="text-2xl">No predictions available at this time</span>
                 ) : (
