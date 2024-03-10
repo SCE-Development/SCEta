@@ -24,34 +24,45 @@ export default function TransitPredictionsPage() {
     getSCEtaPredictions();
   }, []);
 
+  function encode(stopName) {
+    return stopName.replace(/\s+/g, '-')
+    .replace(/&/g, 'and')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+  }
+
   // get stopOptions
   useEffect(() => {
-    let uniqueStops = [];
+    let uniqueStops = {};
     if (busData) {
+      // get unique stop options
       busData.forEach((stop) => {
-        if (!uniqueStops.includes(stop.name)) {
-          uniqueStops.push(stop.name);
-        }
-
-        // if hash exists, set the corresponding tab
-        // otherwise, set tab to the first unique destination + add URL hash
-        if (!selectedStop && uniqueStops.length > 0) {
-          let decodedHash = decodeURIComponent(window.location.hash).replace(/^#/, '')
-          if (decodedHash.length > 0 && uniqueStops.includes(decodedHash)) {
-            setSelectedStop(decodedHash)
-          } else if (!decodedHash.length) {
-            setSelectedStop(uniqueStops[0]);
-            window.location.hash = encodeURIComponent(uniqueStops[0])
-          }
+        let encodedHash = encode(stop.name);
+        if (!uniqueStops.hasOwnProperty(encodedHash)) {
+          uniqueStops[encodedHash] = stop.name;
         }
       });
+
+      // if URL hash exists, set the tab to the encoded stop
+      // otherwise, set tab to the first unique stop + add URL hash
+      if (!selectedStop && Object.keys(uniqueStops).length > 0) {
+        let hash = window.location.hash.replace(/^#/, '')
+        if (uniqueStops.hasOwnProperty(hash)) {
+          setSelectedStop(uniqueStops[hash])
+        } else {
+          let firstStop = Object.keys(uniqueStops)[0];
+          setSelectedStop(uniqueStops[firstStop]);
+          window.location.hash = firstStop
+        }
+      }
     }
-    setStopOptions(uniqueStops);
+    setStopOptions(Object.values(uniqueStops));
   }, [busData, selectedStop]);
 
   const changeTab = (newStop) => {
-    window.location.hash = encodeURIComponent(newStop)
     setSelectedStop(newStop);
+    window.location.hash = encode(newStop)
   };
 
   if (error) {
