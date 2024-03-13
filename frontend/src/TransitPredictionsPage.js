@@ -24,6 +24,11 @@ export default function TransitPredictionsPage() {
     getSCEtaPredictions();
   }, []);
 
+  // this does three things
+  // 1. replace all non alpha numeric chars in the stop name with dashes
+  // 2. replace the character "&" with "and" if it appears
+  // 3. convert all characters in the stop to lowercase.
+  // for example "Santa Clara & 6th" becomes "santa-clara-and-6th"  
   function encode(stopName) {
     return stopName.replace(/\s+/g, '-')
     .replace(/&/g, 'and')
@@ -102,8 +107,8 @@ export default function TransitPredictionsPage() {
         </div>
         {/* Tabs for larger screens */}
         <div className="hidden md:flex flex-row justify-center space-x-4 overflow-x-auto">
-          {stopOptions.map((stopName, index) => (
-            <button key={index} className={`px-4 py-2 text-xl font-semibold border-b-2 
+          {stopOptions.map((stopName) => (
+            <button key={stopName} className={`px-4 py-2 text-xl font-semibold border-b-2 
             ${selectedStop === stopName ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:border-gray-300'}`}
             onClick={() => changeTab(stopName)}>
               {stopName}
@@ -111,11 +116,11 @@ export default function TransitPredictionsPage() {
           ))}
         </div>
         <div>
-          {!!busData.length && busData.map((stop, index) => (
+          {!!busData.length && busData.map((stop) => (
             stop.name === selectedStop &&
-              <div key={index} className="flex flex-col mt-4 p-6 min-w-80 max-h-[55vh] text-xl overflow-y-auto
+              <div key={stop.name} className="flex flex-col mt-4 p-6 min-w-80 max-h-[55vh] text-xl overflow-y-auto
                 bg-white rounded-lg border border-gray-200 shadow-md dark:bg-gray-800 dark:border-gray-700">
-                <div key={stop.name} className="font-bold text-4xl mb-10">{stop.name}</div>
+                <div className="font-bold text-4xl mb-10">{stop.name}</div>
                 {stop.predictions.length === 0 ? (
                   <span className="text-2xl">No predictions available at this time</span>
                 ) : (
