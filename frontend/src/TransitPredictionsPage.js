@@ -24,23 +24,51 @@ export default function TransitPredictionsPage() {
     getSCEtaPredictions();
   }, []);
 
+  // this does three things
+  // 1. replace all non alpha numeric chars in the stop name with dashes
+  // 2. replace the character "&" with "and" if it appears
+  // 3. convert all characters in the stop to lowercase.
+  // for example "Santa Clara & 6th" becomes "santa-clara-and-6th"  
+  function encode(stopName) {
+    return stopName.replace(/\s+/g, '-')
+    .replace(/&/g, 'and')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+  }
+
   // get stopOptions
   useEffect(() => {
-    let uniqueStops = [];
+    let uniqueStops = {};
     if (busData) {
-      busData.map((stop) => {
-        if (!uniqueStops.includes(stop.name)) {
-          uniqueStops.push(stop.name);
-        }
-
-        // set selectedStop to the first unique destination (if it's null)
-        if (!selectedStop && uniqueStops.length > 0) {
-          setSelectedStop(uniqueStops[0]);
+      // get unique stop options
+      busData.forEach((stop) => {
+        let encodedHash = encode(stop.name);
+        if (!uniqueStops.hasOwnProperty(encodedHash)) {
+          uniqueStops[encodedHash] = stop.name;
         }
       });
+
+      // if URL hash exists, set the tab to the encoded stop
+      // otherwise, set tab to the first unique stop + add URL hash
+      if (!selectedStop && Object.keys(uniqueStops).length > 0) {
+        let hash = window.location.hash.replace(/^#/, '')
+        if (uniqueStops.hasOwnProperty(hash)) {
+          setSelectedStop(uniqueStops[hash])
+        } else {
+          let firstStop = Object.keys(uniqueStops)[0];
+          setSelectedStop(uniqueStops[firstStop]);
+          window.location.hash = firstStop
+        }
+      }
     }
-    setStopOptions(uniqueStops);
-  }, [busData]);
+    setStopOptions(Object.values(uniqueStops));
+  }, [busData, selectedStop]);
+
+  const changeTab = (newStop) => {
+    setSelectedStop(newStop);
+    window.location.hash = encode(newStop)
+  };
 
   if (error) {
     return (
@@ -68,7 +96,7 @@ export default function TransitPredictionsPage() {
         </div>
         {/* Dropdown for smaller screens */}
         <div className="md:hidden flex flex-col justify-center space-x-4 overflow-x-auto">
-          <select value={selectedStop} onChange={(e) => setSelectedStop(e.target.value)}
+          <select value={selectedStop} onChange={(e) => changeTab(e.target.value)}
             className="px-4 py-2 text-xl font-semibold border-b-2 outline-none bg-gray-800">
             {stopOptions.map((stopName) => (
               <option key={stopName} value={stopName}>
@@ -82,7 +110,7 @@ export default function TransitPredictionsPage() {
           {stopOptions.map((stopName) => (
             <button key={stopName} className={`px-4 py-2 text-xl font-semibold border-b-2 
             ${selectedStop === stopName ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:border-gray-300'}`}
-            onClick={() => setSelectedStop(stopName)}>
+            onClick={() => changeTab(stopName)}>
               {stopName}
             </button>
           ))}
@@ -90,7 +118,7 @@ export default function TransitPredictionsPage() {
         <div>
           {!!busData.length && busData.map((stop) => (
             stop.name === selectedStop &&
-              <div key={stop.route} className="flex flex-col mt-4 p-6 min-w-80 max-h-[55vh] text-xl overflow-y-auto
+              <div key={stop.name} className="flex flex-col mt-4 p-6 min-w-80 max-h-[55vh] text-xl overflow-y-auto
                 bg-white rounded-lg border border-gray-200 shadow-md dark:bg-gray-800 dark:border-gray-700">
                 <div className="font-bold text-4xl mb-10">{stop.name}</div>
                 {stop.predictions.length === 0 ? (
@@ -99,9 +127,9 @@ export default function TransitPredictionsPage() {
                   <div>
                     {stop.predictions
                       .sort((a, b) => a.route.localeCompare(b.route))
-                      .map((prediction, index) => (
+                      .map((prediction, predictionIndex) => (
                         <RouteCard
-                          key={index}
+                          key={predictionIndex}
                           route={prediction.route}
                           destinations={prediction.destinations}
                         />
