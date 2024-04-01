@@ -166,7 +166,7 @@ def get_fixed_stops_predictions(now, route, destination):
         # train (12 am UTC) before. this is wrong. so we should interpret the
         # next train as coming tomorrow in UTC and recalculate the diff
         if diff.days < 0:
-            dt = dt.replace(day=dt.day + 1)
+            dt += datetime.timedelta(days=1)
             diff = dt - now
 
         # if the difference is positive and under 120 minutes, add it
