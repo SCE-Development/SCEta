@@ -153,6 +153,11 @@ def get_fixed_stops_predictions(now, route, destination):
     filtered_times = []
     TIMESTAMP_FORMAT = "%H:%M:%S"
 
+    # since ACE doesn't run on the weekend, skip ACE predictions if it is the weekend
+    pst_day = (now - datetime.timedelta(hours=8)).weekday()
+    if route == 'ACE Train' and (pst_day == 5 or pst_day == 6): # 5 --> saturday, 6 --> sunday
+        return None
+
     for time in fixed_stops:
         dt = datetime.datetime.strptime(time, TIMESTAMP_FORMAT).replace(tzinfo=datetime.timezone.utc)
 
