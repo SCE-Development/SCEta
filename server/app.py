@@ -132,10 +132,9 @@ def get_stop_predictions(stop_ids, operator, stop_name, use_destination_as_name=
 
         all_incoming_buses = data.get('ServiceDelivery', {}).get('StopMonitoringDelivery', {}).get('MonitoredStopVisit')
         for bus in all_incoming_buses:
+            route_name = bus.get('MonitoredVehicleJourney', {}).get('LineRef')
             if use_destination_as_name:
                 route_name = bus.get('MonitoredVehicleJourney', {}).get('DestinationName')
-            else:
-                route_name = bus.get('MonitoredVehicleJourney', {}).get('LineRef')
             expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
             route_destination = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('DestinationDisplay')
             if route_destination is None:
