@@ -234,4 +234,3 @@ if __name__ == 'app':
 if __name__ == '__main__':
     logging.info(f"running on {args.host}, listening on port {args.port}")
     uvicorn.run("app:app", host=args.host, port=args.port, reload=True)
-    
