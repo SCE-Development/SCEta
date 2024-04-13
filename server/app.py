@@ -103,7 +103,7 @@ def update_cache():
     cache.stops = new_stops
     cache.updated_at = now
 
-def get_stop_predictions(stop_ids, operator, stop_name, use_destination_as_name):
+def get_stop_predictions(stop_ids, operator, stop_name, use_destination_as_name=False):
     unique_buses: typing.Dict[str, Prediction] = collections.defaultdict(lambda: Prediction("", collections.defaultdict(list)))
 
     for stop_id in stop_ids:
