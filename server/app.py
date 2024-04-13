@@ -37,7 +37,6 @@ fixed_stops = []
 try:
     with open(args.fixed_stops, "r") as stream:
         fixed_stops = json.load(stream)
-        print(fixed_stops)
 except FileNotFoundError:
     logging.debug("JSON file with fixed stops was not provided, skipping")
 except Exception:
@@ -150,7 +149,6 @@ def get_stop_predictions(stop_ids, operator, stop_name, use_destination_as_name)
             unique_buses[route_name].destinations[route_destination].append(expected_arrival)
 
     stop_info = Stop(stop_ids, stop_name, list(unique_buses.values()))
-    print(stop_info)
     return stop_info
 
 def get_fixed_stops_predictions(now, route, destination):
@@ -210,10 +208,6 @@ def helper_thread():
             MetricsHandler.cache_update_errors.inc()
         finally:
             time.sleep(60 * cache_update_interval)
-
-@app.get('/thread-health')
-def thread_health():
-    return {"thread_alive": helper.is_alive()}
 
 # middleware to get metrics on HTTP response codes
 @app.middleware("http")
