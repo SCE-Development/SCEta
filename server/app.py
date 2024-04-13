@@ -87,7 +87,7 @@ def update_cache():
     for stop in stops:
         # get predictions for individual stop
         stop_name = add_suffix_to_name(stop)
-        stop_info = get_stop_predictions([stop.get('id')], stop.get('operator'), stop_name, stop.get('use_destination_as_name'))
+        stop_info = get_stop_predictions([stop.get('id')], stop.get('operator'), stop_name, stop.get('use_destination_as_name', False))
         new_stops.append(stop_info)
 
     for group in grouped_stops:
