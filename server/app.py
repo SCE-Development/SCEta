@@ -37,6 +37,7 @@ fixed_stops = []
 try:
     with open(args.fixed_stops, "r") as stream:
         fixed_stops = json.load(stream)
+        print(fixed_stops)
 except FileNotFoundError:
     logging.debug("JSON file with fixed stops was not provided, skipping")
 except Exception:
@@ -87,11 +88,11 @@ def update_cache():
     for stop in stops:
         # get predictions for individual stop
         stop_name = add_suffix_to_name(stop)
-        stop_info = get_stop_predictions([stop.get('id')], stop.get('operator'), stop_name)
+        stop_info = get_stop_predictions([stop.get('id')], stop.get('operator'), stop_name, stop.get('use_destination_as_name'))
         new_stops.append(stop_info)
 
     for group in grouped_stops:
-        stop_info = get_stop_predictions(group.get('ids'), group.get('operator'), group.get('group_name'))
+        stop_info = get_stop_predictions(group.get('ids'), group.get('operator'), group.get('group_name'), group.get('use_destination_as_name'))
 
         if group.get('timetables'):
             for timetable in group.get('timetables', []):
@@ -103,7 +104,7 @@ def update_cache():
     cache.stops = new_stops
     cache.updated_at = now
 
-def get_stop_predictions(stop_ids, operator, stop_name):
+def get_stop_predictions(stop_ids, operator, stop_name, use_destination_as_name):
     unique_buses: typing.Dict[str, Prediction] = collections.defaultdict(lambda: Prediction("", collections.defaultdict(list)))
 
     for stop_id in stop_ids:
@@ -113,7 +114,6 @@ def get_stop_predictions(stop_ids, operator, stop_name):
             'stopCode': stop_id,
             'format': 'json'
         }
-
         with MetricsHandler.api_latency.time():
             response = requests.get(PREDICTIONS_URL, params=params)
         logging.debug(f'511`s API response code was {response.status_code}')
@@ -133,7 +133,10 @@ def get_stop_predictions(stop_ids, operator, stop_name):
 
         all_incoming_buses = data.get('ServiceDelivery', {}).get('StopMonitoringDelivery', {}).get('MonitoredStopVisit')
         for bus in all_incoming_buses:
-            route_name = bus.get('MonitoredVehicleJourney', {}).get('LineRef')
+            if use_destination_as_name:
+                route_name = bus.get('MonitoredVehicleJourney', {}).get('DestinationName')
+            else:
+                route_name = bus.get('MonitoredVehicleJourney', {}).get('LineRef')
             expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
             route_destination = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('DestinationDisplay')
             if route_destination is None:
@@ -147,6 +150,7 @@ def get_stop_predictions(stop_ids, operator, stop_name):
             unique_buses[route_name].destinations[route_destination].append(expected_arrival)
 
     stop_info = Stop(stop_ids, stop_name, list(unique_buses.values()))
+    print(stop_info)
     return stop_info
 
 def get_fixed_stops_predictions(now, route, destination):
@@ -206,6 +210,10 @@ def helper_thread():
             MetricsHandler.cache_update_errors.inc()
         finally:
             time.sleep(60 * cache_update_interval)
+
+@app.get('/thread-health')
+def thread_health():
+    return {"thread_alive": helper.is_alive()}
 
 # middleware to get metrics on HTTP response codes
 @app.middleware("http")
