@@ -87,11 +87,11 @@ def update_cache():
     for stop in stops:
         # get predictions for individual stop
         stop_name = add_suffix_to_name(stop)
-        stop_info = get_stop_predictions([stop.get('id')], stop.get('operator'), stop_name)
+        stop_info = get_stop_predictions([stop.get('id')], stop.get('operator'), stop_name, stop.get('use_destination_as_name', False))
         new_stops.append(stop_info)
 
     for group in grouped_stops:
-        stop_info = get_stop_predictions(group.get('ids'), group.get('operator'), group.get('group_name'))
+        stop_info = get_stop_predictions(group.get('ids'), group.get('operator'), group.get('group_name'), group.get('use_destination_as_name', False))
 
         if group.get('timetables'):
             for timetable in group.get('timetables', []):
@@ -103,7 +103,7 @@ def update_cache():
     cache.stops = new_stops
     cache.updated_at = now
 
-def get_stop_predictions(stop_ids, operator, stop_name):
+def get_stop_predictions(stop_ids, operator, stop_name, use_destination_as_name=False):
     unique_buses: typing.Dict[str, Prediction] = collections.defaultdict(lambda: Prediction("", collections.defaultdict(list)))
 
     for stop_id in stop_ids:
@@ -113,7 +113,6 @@ def get_stop_predictions(stop_ids, operator, stop_name):
             'stopCode': stop_id,
             'format': 'json'
         }
-
         with MetricsHandler.api_latency.time():
             response = requests.get(PREDICTIONS_URL, params=params)
         logging.debug(f'511`s API response code was {response.status_code}')
@@ -134,6 +133,8 @@ def get_stop_predictions(stop_ids, operator, stop_name):
         all_incoming_buses = data.get('ServiceDelivery', {}).get('StopMonitoringDelivery', {}).get('MonitoredStopVisit')
         for bus in all_incoming_buses:
             route_name = bus.get('MonitoredVehicleJourney', {}).get('LineRef')
+            if use_destination_as_name:
+                route_name = bus.get('MonitoredVehicleJourney', {}).get('DestinationName')
             expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
             route_destination = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('DestinationDisplay')
             if route_destination is None:
