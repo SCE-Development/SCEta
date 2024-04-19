@@ -71,6 +71,8 @@ class Stop:
   ids: typing.List[str]
   name: str
   predictions: typing.List[Prediction]
+  latitude: float
+  longitude: float
 
 @dataclass
 class Cache:
@@ -104,9 +106,18 @@ def update_cache():
     cache.updated_at = now
 
 def get_stop_predictions(stop_ids, operator, stop_name, use_destination_as_name=False):
-    unique_buses: typing.Dict[str, Prediction] = collections.defaultdict(lambda: Prediction("", collections.defaultdict(list)))
 
+    stop_coordinates = {
+    "64995": {"lat": 37.353304, "lon": -121.890562},
+    "60413": {"lat": 37.338508, "lon": -121.885378},
+    "BERY": {"lat": 37.368495, "lon": -121.874661},
+    "MLPT": {"lat": 37.409836, "lon": -121.890803},
+    "70261": {"lat": 37.329239, "lon": -121.903011}}
+
+    unique_buses: typing.Dict[str, Prediction] = collections.defaultdict(lambda: Prediction("", collections.defaultdict(list)))
     for stop_id in stop_ids:
+        latitude = stop_coordinates.get(str(stop_id), {}).get('lat')
+        longitude = stop_coordinates.get(str(stop_id), {}).get('lon')
         params = {
             'api_key': API_KEY,
             'agency': operator,
@@ -147,7 +158,7 @@ def get_stop_predictions(stop_ids, operator, stop_name, use_destination_as_name=
             unique_buses[route_name].route = route_name
             unique_buses[route_name].destinations[route_destination].append(expected_arrival)
 
-    stop_info = Stop(stop_ids, stop_name, list(unique_buses.values()))
+    stop_info = Stop(stop_ids, stop_name, list(unique_buses.values()), latitude, longitude)
     return stop_info
 
 def get_fixed_stops_predictions(now, route, destination):
