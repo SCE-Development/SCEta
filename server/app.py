@@ -108,16 +108,17 @@ def update_cache():
 def get_stop_predictions(stop_ids, operator, stop_name, use_destination_as_name=False):
 
     stop_coordinates = {
-    "64995": {"lat": 37.353304, "lon": -121.890562},
-    "60413": {"lat": 37.338508, "lon": -121.885378},
+    64995: {"lat": 37.353304, "lon": -121.890562},
+    60413: {"lat": 37.338508, "lon": -121.885378},
     "BERY": {"lat": 37.368495, "lon": -121.874661},
     "MLPT": {"lat": 37.409836, "lon": -121.890803},
-    "70261": {"lat": 37.329239, "lon": -121.903011}}
+    70261: {"lat": 37.329239, "lon": -121.903011},
+    70262: {"lat": 37.329231, "lon": -121.903173}}
 
     unique_buses: typing.Dict[str, Prediction] = collections.defaultdict(lambda: Prediction("", collections.defaultdict(list)))
     for stop_id in stop_ids:
-        latitude = stop_coordinates.get(str(stop_id), {}).get('lat')
-        longitude = stop_coordinates.get(str(stop_id), {}).get('lon')
+        latitude = stop_coordinates.get(stop_id, {}).get('lat')
+        longitude = stop_coordinates.get(stop_id, {}).get('lon')
         params = {
             'api_key': API_KEY,
             'agency': operator,
