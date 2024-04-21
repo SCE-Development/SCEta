@@ -116,8 +116,8 @@ def get_stop_predictions(stop_ids, operator, stop_name, use_destination_as_name=
 
     unique_buses: typing.Dict[str, Prediction] = collections.defaultdict(lambda: Prediction("", collections.defaultdict(list)))
     for stop_id in stop_ids:
-        latitude = stop_coordinates.get(str(stop_id), {}).get('lat')
-        longitude = stop_coordinates.get(str(stop_id), {}).get('lon')
+        latitude = stop_coordinates.get(stop_id, {}).get('lat')
+        longitude = stop_coordinates.get(stop_id, {}).get('lon')
         params = {
             'api_key': API_KEY,
             'agency': operator,
