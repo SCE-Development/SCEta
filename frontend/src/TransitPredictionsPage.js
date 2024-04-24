@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { getTransitPredictions } from './APIFunctions/SCEta';
 import { formatDateToTime } from './util/formatDateToTime';
 import RouteCard from './Components/RouteCard';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
 export default function TransitPredictionsPage() {
   const [error, setError] = useState();
@@ -31,10 +36,10 @@ export default function TransitPredictionsPage() {
   // for example "Santa Clara & 6th" becomes "santa-clara-and-6th"  
   function encode(stopName) {
     return stopName.replace(/\s+/g, '-')
-    .replace(/&/g, 'and')
-    .replace(/[^a-zA-Z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .toLowerCase();
+      .replace(/&/g, 'and')
+      .replace(/[^a-zA-Z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .toLowerCase();
   }
 
   // get stopOptions
@@ -61,6 +66,7 @@ export default function TransitPredictionsPage() {
           window.location.hash = firstStop
         }
       }
+
     }
     setStopOptions(Object.values(uniqueStops));
   }, [busData, selectedStop]);
@@ -69,6 +75,14 @@ export default function TransitPredictionsPage() {
     setSelectedStop(newStop);
     window.location.hash = encode(newStop)
   };
+
+  //set default marker icon
+  delete L.Icon.Default.prototype._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: markerIcon,
+    iconUrl: markerIcon,
+    shadowUrl: markerShadow,
+  });
 
   if (error) {
     return (
@@ -89,7 +103,7 @@ export default function TransitPredictionsPage() {
 
   return (
     <section className="bg-white dark:bg-gray-900 min-h-[calc(100vh)] ">
-      <div className="px-4 py-8 mx-auto lg:py-16 lg:px-6 max-w-7xl">
+      <div className="px-4 py-8 mx-auto lg:py-16 lg:px-6 max-w-[80%]">
         <div className="mx-10 mb-8 text-center">
           <h2 className="mb-4 text-3xl font-extrabold tracking-tight text-gray-900 lg:text-4xl dark:text-white">SCEta's Transit Predictions</h2>
           <p className="font-light text-gray-500 sm:text-xl dark:text-gray-400">Below predictions are up-to-date as of <span className='font-semibold'>{timeAtMount}</span></p>
@@ -106,38 +120,54 @@ export default function TransitPredictionsPage() {
           </select>
         </div>
         {/* Tabs for larger screens */}
-        <div className="hidden md:flex flex-row justify-center space-x-4 overflow-x-auto">
+        <div className="hidden items-center md:flex flex-row justify-center space-x-4 overflow-x-auto">
           {stopOptions.map((stopName) => (
             <button key={stopName} className={`px-4 py-2 text-xl font-semibold border-b-2 
             ${selectedStop === stopName ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:border-gray-300'}`}
-            onClick={() => changeTab(stopName)}>
+              onClick={() => changeTab(stopName)}>
               {stopName}
             </button>
           ))}
         </div>
-        <div>
+        <div className="flex flex-col md:grid md:grid-cols-[70%_30%]">
           {!!busData.length && busData.map((stop) => (
             stop.name === selectedStop &&
-              <div key={stop.name} className="flex flex-col mt-4 p-6 min-w-80 max-h-[55vh] text-xl overflow-y-auto
+            <div key={stop.name} className="flex flex-col mt-4 p-2 md:p-6 min-w-50 max-h-[55vh] text-xl
                 bg-white rounded-lg border border-gray-200 shadow-md dark:bg-gray-800 dark:border-gray-700">
-                <div className="font-bold text-4xl mb-10">{stop.name}</div>
-                {stop.predictions.length === 0 ? (
-                  <span className="text-2xl">No predictions available at this time</span>
-                ) : (
-                  <div>
-                    {stop.predictions
-                      .sort((a, b) => a.route.localeCompare(b.route))
-                      .map((prediction, predictionIndex) => (
-                        <RouteCard
-                          key={predictionIndex}
-                          route={prediction.route}
-                          destinations={prediction.destinations}
+              <div className="flex justify-center md:justify-start font-bold text-4xl mb-5 md:mb-10">{stop.name}</div>
+              {stop.predictions.length === 0 ? (
+                <span className="text-2xl">No predictions available at this time</span>
+              ) : (
+                <div>
+                  {stop.predictions
+                    .sort((a, b) => a.route.localeCompare(b.route))
+                    .map((prediction, predictionIndex) => (
+                      <RouteCard
+                        key={predictionIndex}
+                        route={prediction.route}
+                        destinations={prediction.destinations}
+                        useDestinationAsName={stop.use_destination_as_name}
                         />
-                      ))}
-                  </div>
-                )}
-              </div>
+                    ))}
+                </div>
+              )}
+            </div>
           ))}
+          {!!busData.length && busData.map((stop) => (
+            stop.name === selectedStop &&
+            <div className="overflow-visible md:ml-5 mt-4">
+              <MapContainer center={[stop.latitude, stop.longitude]} zoom={20} className="rounded-lg h-[30vh] md:h-[40vh] w-full">
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution="&copy; OpenStreetMap contributors"
+                />
+                <Marker position={[stop.latitude, stop.longitude]}>
+                  <Popup>{stop.name}</Popup>
+                </Marker>
+              </MapContainer>
+            </div>
+          ))}
+
         </div>
       </div>
     </section>

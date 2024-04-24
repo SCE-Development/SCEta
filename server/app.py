@@ -73,6 +73,7 @@ class Stop:
   predictions: typing.List[Prediction]
   latitude: float
   longitude: float
+  use_destination_as_name: bool
 
 @dataclass
 class Cache:
@@ -159,7 +160,7 @@ def get_stop_predictions(stop_ids, operator, stop_name, use_destination_as_name=
             unique_buses[route_name].route = route_name
             unique_buses[route_name].destinations[route_destination].append(expected_arrival)
 
-    stop_info = Stop(stop_ids, stop_name, list(unique_buses.values()), latitude, longitude)
+    stop_info = Stop(stop_ids, stop_name, list(unique_buses.values()), latitude, longitude, use_destination_as_name)
     return stop_info
 
 def get_fixed_stops_predictions(now, route, destination):
