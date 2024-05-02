@@ -103,7 +103,7 @@ export default function TransitPredictionsPage() {
 
   return (
     <section className="bg-white dark:bg-gray-900 min-h-[calc(100vh)] ">
-      <div className="px-4 py-8 mx-auto lg:py-16 lg:px-6 max-w-[80%]">
+      <div className="px-4 py-8 ml-5 mr-5 lg:py-16 lg:px-6 max-w-[100%]">
         <div className="mx-10 mb-8 text-center">
           <h2 className="mb-4 text-3xl font-extrabold tracking-tight text-gray-900 lg:text-4xl dark:text-white">SCEta's Transit Predictions</h2>
           <p className="font-light text-gray-500 sm:text-xl dark:text-gray-400">Below predictions are up-to-date as of <span className='font-semibold'>{timeAtMount}</span></p>
@@ -111,7 +111,7 @@ export default function TransitPredictionsPage() {
         {/* Dropdown for smaller screens */}
         <div className="md:hidden flex flex-col justify-center space-x-4 overflow-x-auto">
           <select value={selectedStop} onChange={(e) => changeTab(e.target.value)}
-            className="px-4 py-2 text-xl font-semibold border-b-2 outline-none bg-gray-800">
+            className="px-4 py-2 text-sm md:text-xl font-semibold border-b-2 outline-none bg-gray-800">
             {stopOptions.map((stopName) => (
               <option key={stopName} value={stopName}>
                 {stopName}
@@ -120,7 +120,7 @@ export default function TransitPredictionsPage() {
           </select>
         </div>
         {/* Tabs for larger screens */}
-        <div className="hidden items-center md:flex flex-row justify-center space-x-4 overflow-x-auto">
+        <div className="hidden items-center xl:flex flex-row justify-center space-x-4 overflow-x-auto">
           {stopOptions.map((stopName) => (
             <button key={stopName} className={`px-4 py-2 text-xl font-semibold border-b-2 
             ${selectedStop === stopName ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500 hover:border-gray-300'}`}
@@ -129,12 +129,12 @@ export default function TransitPredictionsPage() {
             </button>
           ))}
         </div>
-        <div className="flex flex-col md:grid md:grid-cols-[70%_30%]">
+        <div className="flex flex-col xl:grid xl:grid-cols-[70%_30%] gap-8">
           {!!busData.length && busData.map((stop) => (
             stop.name === selectedStop &&
-            <div key={stop.name} className="flex flex-col mt-4 p-2 md:p-6 min-w-50 max-h-[55vh] text-xl
+            <div key={stop.name} className="items-center flex flex-col w-full xl:w-full mt-4 p-2 min-w-50 max-h-[55vh] text-xl
                 bg-white rounded-lg border border-gray-200 shadow-md dark:bg-gray-800 dark:border-gray-700">
-              <div className="flex justify-center md:justify-start font-bold text-4xl mb-5 md:mb-10">{stop.name}</div>
+              <div className="flex justify-center xl:justify-start font-bold text-[1rem] md:text-4xl mb-5 xl:mb-10">{stop.name}</div>
               {stop.predictions.length === 0 ? (
                 <span className="text-2xl">No predictions available at this time</span>
               ) : (
@@ -147,7 +147,8 @@ export default function TransitPredictionsPage() {
                         route={prediction.route}
                         destinations={prediction.destinations}
                         useDestinationAsName={stop.use_destination_as_name}
-                        />
+                        timeAtMount={timeAtMount}
+                        /> 
                     ))}
                 </div>
               )}
@@ -155,8 +156,8 @@ export default function TransitPredictionsPage() {
           ))}
           {!!busData.length && busData.map((stop) => (
             stop.name === selectedStop &&
-            <div className="overflow-visible md:ml-5 mt-4">
-              <MapContainer center={[stop.latitude, stop.longitude]} zoom={20} className="rounded-lg h-[30vh] md:h-[40vh] w-full">
+            <div className="overflow-visible xl:mr-10 mt-4 items-center">
+              <MapContainer center={[stop.latitude, stop.longitude]} zoom={16} className="mx-auto rounded-lg h-[30vh] xl:h-[29em] w-full">
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution="&copy; OpenStreetMap contributors"
