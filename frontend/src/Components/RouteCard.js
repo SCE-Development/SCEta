@@ -1,7 +1,7 @@
 import React from 'react';
 import { formatDateToTime } from '../util/formatDateToTime';
 
-export default function RouteCard({ route, destinations, useDestinationAsName, timeAtMount }) {
+export default function RouteCard({ route, destinations, useDestinationAsName }) {
   return (
     <div className="mb-4">
       <div className="flex flex-row justify-between items-center">
