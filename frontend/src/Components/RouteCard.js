@@ -10,14 +10,14 @@ export default function RouteCard({ route, destinations, useDestinationAsName })
       </div>
       {Object.entries(destinations).map(([destination, times ]) => (
         <div key={destination}>
-          <div className="grid gap-2 grid-cols-[45%_55%] md:grid-cols-[45%_55%] text-xl md:text-2xl w-[60vw]">
+          <div className="md:grid md:gap-2 xl:grid-cols-[60%_40%] md:grid-cols-[45%_55%] text-xl md:text-2xl md:w-[60vw] w-[70vw]">
             <div>
               <b className=" mb-1 text-primary text-[1rem] md:text-3xl">{route}</b>
               {useDestinationAsName ? null : (
                 <span className="mb-1 text-white text-[1rem] md:text-3xl"> to {destination}</span>
               )}
             </div>
-            <span className="text-[1rem] md:text-2xl">
+            <span className="text-[1rem] md:text-2xl ">
               {times.map((time, timeIndex) => (
                 <span key={timeIndex}>
                   {formatDateToTime(time)} {timeIndex !== times.length - 1 && ', '}
