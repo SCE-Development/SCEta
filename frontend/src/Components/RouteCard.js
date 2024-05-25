@@ -17,7 +17,7 @@ export default function RouteCard({ route, destinations, useDestinationAsName })
                 <span className="mb-1 text-white text-[1rem] md:text-3xl"> to {destination}</span>
               )}
             </div>
-            <span className="text-[1rem] md:text-2xl ">
+            <span className="text-[1rem] md:text-2xl md:text-right">
               {times.map((time, timeIndex) => (
                 <span key={timeIndex}>
                   {formatDateToTime(time)} {timeIndex !== times.length - 1 && ', '}

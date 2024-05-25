@@ -132,7 +132,7 @@ export default function TransitPredictionsPage() {
         <div className="flex flex-col xl:grid xl:grid-cols-[70%_30%] gap-8">
           {!!busData.length && busData.map((stop) => (
             stop.name === selectedStop &&
-            <div key={stop.name} className="items-center text-center justify-center flex flex-col w-full xl:w-full mt-4 p-2 min-w-50 max-h-[55vh] text-xl
+            <div key={stop.name} className="items-center text-center md:text-left justify-center flex flex-col w-full xl:w-full mt-4 p-2 min-w-50 max-h-[55vh] text-xl
                 bg-white rounded-lg border border-gray-200 shadow-md dark:bg-gray-800 dark:border-gray-700">
               <div className="flex justify-center xl:justify-start font-bold text-[1rem] md:text-4xl mb-5 xl:mb-10">{stop.name}</div>
               {stop.predictions.length === 0 ? (
