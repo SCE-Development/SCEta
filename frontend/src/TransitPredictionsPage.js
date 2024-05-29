@@ -156,7 +156,7 @@ export default function TransitPredictionsPage() {
           ))}
           {!!busData.length && busData.map((stop) => (
             stop.name === selectedStop &&
-            <div className="overflow-visible xl:mr-10 mt-4 items-center">
+            <div key={stop.name} className="overflow-visible xl:mr-10 mt-4 items-center">
               <MapContainer center={[stop.latitude, stop.longitude]} zoom={16} className="mx-auto rounded-lg h-[30vh] xl:h-[29em] w-full">
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
