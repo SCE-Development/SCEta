@@ -109,7 +109,7 @@ export default function TransitPredictionsPage() {
           <p className="font-light text-gray-500 sm:text-xl dark:text-gray-400">Below predictions are up-to-date as of <span className='font-semibold'>{timeAtMount}</span></p>
         </div>
         {/* Dropdown for smaller screens */}
-        <div className="md:hidden flex flex-col justify-center space-x-4 overflow-x-auto">
+        <div className="xl:hidden flex flex-col justify-center space-x-4 overflow-x-auto">
           <select value={selectedStop} onChange={(e) => changeTab(e.target.value)}
             className="px-4 py-2 text-sm md:text-xl font-semibold border-b-2 outline-none bg-gray-800">
             {stopOptions.map((stopName) => (
