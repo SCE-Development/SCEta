@@ -39,4 +39,4 @@ sce run transit
 
 - [ ] Access transit predictions at http://localhost:3001/api/predictions
 - [ ] Now, you can access SCEta's frontend and backend data from http://localhost:3001
-- [ ] To view metrics, go to `localhost:3001/prometheus/graph`
+- [ ] To view metrics, go to http://localhost:3001/prometheus/graph
