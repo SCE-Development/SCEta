@@ -12,10 +12,6 @@ sce clone transit
 cd PATH_TO_SCETA_HERE
 sce link transit
 ```
-- [ ] run the project
-```
-sce run transit
-```
 
 - [ ] Create `data.yaml` file in the `server` folder of this project
 
@@ -36,6 +32,10 @@ sce run transit
         - 70262
   cache_update_interval_minutes: 10
   ```
+- [ ] run the project
+```
+sce run transit
+```
 
 - [ ] Access transit predictions at http://localhost:3001/api/predictions
 - [ ] Now, you can access SCEta's frontend and backend data from http://localhost:3001
