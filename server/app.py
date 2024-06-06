@@ -240,6 +240,14 @@ def get_metrics():
         content=prometheus_client.generate_latest(),
     )
 
+@app.get('/debug')
+def get_debug():
+    last_updated_timestamp = MetricsHandler.cache_last_updated._value.get()
+    return({
+        "cache": vars(cache),
+        "cache_age": datetime.datetime.fromtimestamp(last_updated_timestamp).isoformat()
+    })
+
 if __name__ == 'app':
     helper = threading.Thread(target=helper_thread, daemon=True)
     helper.start()
