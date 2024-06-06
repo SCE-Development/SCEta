@@ -2,7 +2,6 @@
 *.yml
 !docker-compose.dev.yml
 !docker-compose.yml
-
 __pycache__
-
+venv
 sceta-venv
