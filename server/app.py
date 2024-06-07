@@ -94,7 +94,7 @@ def update_cache():
         new_stops.append(stop_info)
 
     for group in grouped_stops:
-        for stop in group.get("stops"):
+        for stop in group.get("stops", []):
             stop_info = get_stop_predictions([stop.get('id')], stop.get('operator'), group.get('name'), group.get('use_destination_as_name', False))        
 
             if group.get('timetables'):
