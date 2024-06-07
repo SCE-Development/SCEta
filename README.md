@@ -4,10 +4,13 @@
 
 - [ ] setup sce-cli using the steps here https://github.com/SCE-Development/SCE-CLI
 - [ ] clone the project with
+
 ```
 sce clone transit
 ```
+
 - [ ] link the project to the tool
+
 ```
 cd PATH_TO_SCETA_HERE
 sce link transit
@@ -25,14 +28,17 @@ sce link transit
       name: Milpitas
       id: MLPT
   grouped_stops:
-    - operator: CT
-      group_name: San Jose Diridon Caltrain Station
-      ids:
-        - 70261
-        - 70262
+    - name: San Jose Diridon Caltrain Station
+      stops:
+        - operator: CT
+          id: 70261
+        - operator: CT
+          id: 70262
   cache_update_interval_minutes: 10
   ```
+
 - [ ] run the project
+
 ```
 sce run transit
 ```
