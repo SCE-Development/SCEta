@@ -94,12 +94,17 @@ def update_cache():
         new_stops.append(stop_info)
 
     for group in grouped_stops:
-        stop_info = get_stop_predictions(group.get('ids'), group.get('operator'), group.get('group_name'), group.get('use_destination_as_name', False))
+        for stop in group.get("stops", []):
+            stop_info = get_stop_predictions(
+                [stop.get('id')], 
+                stop.get('operator'), 
+                group.get('name'), 
+                group.get('use_destination_as_name', False)
+            )        
 
-        if group.get('timetables'):
-            for timetable in group.get('timetables', []):
-                if predictions := get_fixed_stops_predictions(now, timetable.get('route_name'), timetable.get('destination')):
-                    stop_info.predictions.append(predictions)
+        for timetable in group.get('timetables', []):
+            if predictions := get_fixed_stops_predictions(now, timetable.get('route_name'), timetable.get('destination')):
+                stop_info.predictions.append(predictions)
 
         new_stops.append(stop_info)
 
