@@ -29,6 +29,11 @@ export default function TransitPredictionsPage() {
     getSCEtaPredictions();
   }, []);
 
+  // this does three things
+  // 1. replace all non alpha numeric chars in the stop name with dashes
+  // 2. replace the character "&" with "and" if it appears
+  // 3. convert all characters in the stop to lowercase.
+  // for example "Santa Clara & 6th" becomes "santa-clara-and-6th"
   function encode(stopName) {
     return stopName.replace(/\s+/g, '-')
       .replace(/&/g, 'and')
@@ -37,9 +42,11 @@ export default function TransitPredictionsPage() {
       .toLowerCase();
   }
 
+  // get stopOptions
   useEffect(() => {
     let uniqueStops = {};
     if (busData) {
+      // get unique stop options
       busData.forEach((stop) => {
         let encodedHash = encode(stop.name);
         uniqueStops[encodedHash] = {
@@ -48,6 +55,8 @@ export default function TransitPredictionsPage() {
         };
       });
 
+      // if URL hash exists, set the tab to the encoded stop
+      // otherwise, set tab to the first unique stop + add URL hash
       if (!selectedStop && Object.keys(uniqueStops).length > 0) {
         let hash = window.location.hash.replace(/^#/, '');
         if (uniqueStops.hasOwnProperty(hash)) {
@@ -67,6 +76,7 @@ export default function TransitPredictionsPage() {
     window.location.hash = encode(newStop);
   };
 
+  //set default marker icon
   function maybeRenderCallButton(stopId) {
     if (Number.isNaN(Number.parseInt(stopId))) {
       return <></>
@@ -114,6 +124,7 @@ export default function TransitPredictionsPage() {
           <h2 className="mb-4 text-3xl font-extrabold tracking-tight text-gray-900 lg:text-4xl dark:text-white">SCEta's Transit Predictions</h2>
           <p className="font-light text-gray-500 sm:text-xl dark:text-gray-400">Below predictions are up-to-date as of <span className='font-semibold'>{timeAtMount}</span></p>
         </div>
+        {/* Dropdown for smaller screens */}
         <div className="xl:hidden flex flex-col justify-center space-x-4 overflow-x-auto">
           <select value={selectedStop} onChange={(e) => changeTab(e.target.value)}
             className="px-4 py-2 text-sm md:text-xl font-semibold border-b-2 outline-none bg-gray-800">
@@ -124,8 +135,7 @@ export default function TransitPredictionsPage() {
             ))}
           </select>
         </div>
-
-        {/* Dropdown for smaller screens */}
+        {/* Tabs for larger screens */}
         <div className="hidden items-center xl:flex flex-row justify-center space-x-4 overflow-x-auto">
           {stopOptions.map((stop) => (
             <button key={stop.name} className={`px-4 py-2 text-xl font-semibold border-b-2 
@@ -136,7 +146,6 @@ export default function TransitPredictionsPage() {
           ))}
         </div>
 
-        {/* Tabs for larger screens */}
         <div className="flex flex-col xl:grid xl:grid-cols-[70%_30%] gap-8">
           {!!busData.length && busData.map((stop) => (
             stop.name === selectedStop &&
