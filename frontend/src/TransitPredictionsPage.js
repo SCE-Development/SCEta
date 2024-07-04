@@ -49,9 +49,12 @@ export default function TransitPredictionsPage() {
       // get unique stop options
       busData.forEach((stop) => {
         let encodedHash = encode(stop.name);
+        let phoneId = stop.ids.some(id => !isNaN(id)) ? stop.ids.find(id => !isNaN(id)) : null;
+        console.log(`Phone ID for ${stop.name}:`, phoneId);
         uniqueStops[encodedHash] = {
           name: stop.name,
-          ids: Array.isArray(stop.ids) ? stop.ids : [], 
+          ids: Array.isArray(stop.ids) ? stop.ids : [],
+          phoneId: phoneId, 
         };
       });
 
@@ -130,7 +133,7 @@ export default function TransitPredictionsPage() {
             className="px-4 py-2 text-sm md:text-xl font-semibold border-b-2 outline-none bg-gray-800">
             {stopOptions.map((stop) => (
               <option key={stop.name} value={stop.name}>
-                {`${stop.name} (${stop.ids.length > 0 ? stop.ids.join(', ') : 'No IDs'})`}
+                {`${stop.name} `}
               </option>
             ))}
           </select>
@@ -154,24 +157,24 @@ export default function TransitPredictionsPage() {
               <div className="flex justify-center xl:justify-start font-bold text-[1rem] md:text-4xl mb-2 xl:mb-5">
                 {stop.name}
               </div>
+
+
               <div className="flex justify-center xl:justify-start text-sm md:text-lg text-gray-500 mb-4 xl:mb-6">
-                {stop.ids.length > 0 ? (
+                {
                   <>
-                    {stop.ids.some(id => !isNaN(id)) ? (
+                    {stop.phoneId !== null && (
                       <a
-                        href={`tel:511p1p1,,${stop.ids.find(id => !isNaN(id))}`}
+                        href={`tel:511p1p1,,${stop.phoneId}`}
                         className="inline-block px-2 py-1 ml-2 text-white bg-blue-600 border border-blue-600 rounded hover:bg-blue-700"
                       >
                         CLICK TO CALL
                       </a>
-                    ) : (
-                      <span className="inline-block px-2 py-1 ml-2 text-gray-500 border border-gray-500 rounded">NO CALL AVAILABLE</span>
                     )}
                   </>
-                ) : (
-                  <span>No IDs</span>
-                )}
+                }
               </div>
+
+              
               {stop.predictions.length === 0 ? (
                 <span className="text-2xl">No predictions available at this time</span>
               ) : (
