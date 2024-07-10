@@ -162,9 +162,9 @@ export default function TransitPredictionsPage() {
               <div className="flex justify-center xl:justify-start text-sm md:text-lg text-gray-500 mb-4 xl:mb-6">
                 {
                   <>
-                    {stop.phoneId !== null && (
+                    {stop.ids.some(id => !isNaN(id)) && (
                       <a
-                        href={`tel:511p1p1,,${stop.phoneId}`}
+                        href={`tel:511p1p1,,${stop.ids.find(id => !isNaN(id))}`}
                         className="inline-block px-2 py-1 ml-2 text-white bg-blue-600 border border-blue-600 rounded hover:bg-blue-700"
                       >
                         CLICK TO CALL
