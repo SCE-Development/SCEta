@@ -76,6 +76,13 @@ export default function TransitPredictionsPage() {
     window.location.hash = encode(newStop)
   };
 
+  function maybeRenderCallButton(stopId) {
+    if (Number.isNaN(Number.parseInt(stopId))) {
+      return <></>
+    }
+    return <p>CALL ME!!! {stopId}</p>
+  }
+
   //set default marker icon
   delete L.Icon.Default.prototype._getIconUrl;
   L.Icon.Default.mergeOptions({
@@ -139,6 +146,7 @@ export default function TransitPredictionsPage() {
                 <span className="text-2xl">No predictions available at this time</span>
               ) : (
                 <div>
+                  {maybeRenderCallButton(stop.id)}
                   {stop.predictions
                     .sort((a, b) => a.route.localeCompare(b.route))
                     .map((prediction, predictionIndex) => (
