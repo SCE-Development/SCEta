@@ -68,7 +68,7 @@ class Prediction:
 
 @dataclass
 class Stop:
-  ids: typing.List[str]
+  id: str
   name: str
   predictions: typing.List[Prediction]
   latitude: float
@@ -90,13 +90,13 @@ def update_cache():
     for stop in stops:
         # get predictions for individual stop
         stop_name = add_suffix_to_name(stop)
-        stop_info = get_stop_predictions([stop.get('id')], stop.get('operator'), stop_name, stop.get('use_destination_as_name', False))
+        stop_info = get_stop_predictions(stop.get('id'), stop.get('operator'), stop_name, stop.get('use_destination_as_name', False))
         new_stops.append(stop_info)
 
     for group in grouped_stops:
         for stop in group.get("stops", []):
             stop_info = get_stop_predictions(
-                [stop.get('id')], 
+                stop.get('id'), 
                 stop.get('operator'), 
                 group.get('name'), 
                 group.get('use_destination_as_name', False)
@@ -111,7 +111,7 @@ def update_cache():
     cache.stops = new_stops
     cache.updated_at = now
 
-def get_stop_predictions(stop_ids, operator, stop_name, use_destination_as_name=False):
+def get_stop_predictions(stop_id, operator, stop_name, use_destination_as_name=False):
 
     stop_coordinates = {
     64995: {"lat": 37.353304, "lon": -121.890562},
@@ -122,50 +122,50 @@ def get_stop_predictions(stop_ids, operator, stop_name, use_destination_as_name=
     70262: {"lat": 37.329231, "lon": -121.903173}}
 
     unique_buses: typing.Dict[str, Prediction] = collections.defaultdict(lambda: Prediction("", collections.defaultdict(list)))
-    for stop_id in stop_ids:
-        latitude = stop_coordinates.get(stop_id, {}).get('lat')
-        longitude = stop_coordinates.get(stop_id, {}).get('lon')
-        params = {
-            'api_key': API_KEY,
-            'agency': operator,
-            'stopCode': stop_id,
-            'format': 'json'
-        }
-        with MetricsHandler.api_latency.time():
-            response = requests.get(PREDICTIONS_URL, params=params)
-        logging.debug(f'511`s API response code was {response.status_code}')
 
-        # unsuccessful request to 511 API
-        if response.status_code != 200:
-            MetricsHandler.api_response_codes.labels(response.status_code).inc() 
-            logging.error(f"not parsing response because response code was {response.status_code}")
-            time.sleep(10)
-            continue
+    latitude = stop_coordinates.get(stop_id, {}).get('lat')
+    longitude = stop_coordinates.get(stop_id, {}).get('lon')
+    params = {
+        'api_key': API_KEY,
+        'agency': operator,
+        'stopCode': stop_id,
+        'format': 'json'
+    }
+    with MetricsHandler.api_latency.time():
+        response = requests.get(PREDICTIONS_URL, params=params)
+    logging.debug(f'511`s API response code was {response.status_code}')
 
-        # successful request to 511 API
+    # unsuccessful request to 511 API
+    if response.status_code != 200:
         MetricsHandler.api_response_codes.labels(response.status_code).inc() 
+        logging.error(f"not parsing response because response code was {response.status_code}")
+        time.sleep(10)
+        return
 
-        content = response.content.decode('utf-8-sig')
-        data = json.loads(content)
+    # successful request to 511 API
+    MetricsHandler.api_response_codes.labels(response.status_code).inc() 
 
-        all_incoming_buses = data.get('ServiceDelivery', {}).get('StopMonitoringDelivery', {}).get('MonitoredStopVisit')
-        for bus in all_incoming_buses:
-            route_name = bus.get('MonitoredVehicleJourney', {}).get('LineRef')
-            if use_destination_as_name:
-                route_name = bus.get('MonitoredVehicleJourney', {}).get('DestinationName')
-            expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
-            route_destination = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('DestinationDisplay')
-            if route_destination is None:
-                MetricsHandler.null_destinations_seen.labels(stop_id).inc()
-                route_destination = 'Unknown Destination'
-            
-            # cast to String in case destination is a different data type
-            route_destination = str(route_destination).title()
+    content = response.content.decode('utf-8-sig')
+    data = json.loads(content)
 
-            unique_buses[route_name].route = route_name
-            unique_buses[route_name].destinations[route_destination].append(expected_arrival)
+    all_incoming_buses = data.get('ServiceDelivery', {}).get('StopMonitoringDelivery', {}).get('MonitoredStopVisit')
+    for bus in all_incoming_buses:
+        route_name = bus.get('MonitoredVehicleJourney', {}).get('LineRef')
+        if use_destination_as_name:
+            route_name = bus.get('MonitoredVehicleJourney', {}).get('DestinationName')
+        expected_arrival = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('AimedArrivalTime')
+        route_destination = bus.get('MonitoredVehicleJourney', {}).get('MonitoredCall', {}).get('DestinationDisplay')
+        if route_destination is None:
+            MetricsHandler.null_destinations_seen.labels(stop_id).inc()
+            route_destination = 'Unknown Destination'
+        
+        # cast to String in case destination is a different data type
+        route_destination = str(route_destination).title()
 
-    stop_info = Stop(stop_ids, stop_name, list(unique_buses.values()), latitude, longitude, use_destination_as_name)
+        unique_buses[route_name].route = route_name
+        unique_buses[route_name].destinations[route_destination].append(expected_arrival)
+
+    stop_info = Stop(stop_id, stop_name, list(unique_buses.values()), latitude, longitude, use_destination_as_name)
     return stop_info
 
 def get_fixed_stops_predictions(now, route, destination):
