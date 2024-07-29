@@ -171,7 +171,9 @@ export default function TransitPredictionsPage() {
                 <span className="text-2xl">No predictions available at this time</span>
               ) : (
                 <div>
-                  {maybeRenderCallButton(stop.id)}
+                  <div className = "sm:hidden">
+                    {maybeRenderCallButton(stop.id)}
+                  </div>
                   {stop.predictions
                     .sort((a, b) => a.route.localeCompare(b.route))
                     .map((prediction, predictionIndex) => (
