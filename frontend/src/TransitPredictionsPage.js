@@ -93,6 +93,22 @@ export default function TransitPredictionsPage() {
   }
 
   //set default marker icon
+  function maybeRenderCallButton(stopId) {
+    if (Number.isNaN(Number.parseInt(stopId))) {
+      return <></>
+    }
+    return (
+      <div className="flex justify-center">
+        <a
+          href={`tel:511p1p1,,${(stopId)}`}
+          className="inline-block px-2 py-1 ml-2 text-white text-sm lg:text-lg bg-blue-600 border border-blue-600 rounded hover:bg-blue-700"
+        >
+          CLICK TO CALL
+        </a>
+      </div>
+    );
+  }
+  //set default marker icon
   delete L.Icon.Default.prototype._getIconUrl;
   L.Icon.Default.mergeOptions({
     iconRetinaUrl: markerIcon,
@@ -155,7 +171,9 @@ export default function TransitPredictionsPage() {
                 <span className="text-2xl">No predictions available at this time</span>
               ) : (
                 <div>
-                  {maybeRenderCallButton(stop.id)}
+                  <div className = "sm:hidden">
+                    {maybeRenderCallButton(stop.id)}
+                  </div>
                   {stop.predictions
                     .sort((a, b) => a.route.localeCompare(b.route))
                     .map((prediction, predictionIndex) => (
