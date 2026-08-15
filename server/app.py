@@ -125,6 +125,33 @@ def get_stop_predictions(stop_id, operator, stop_name, use_destination_as_name=F
 
     latitude = stop_coordinates.get(stop_id, {}).get('lat')
     longitude = stop_coordinates.get(stop_id, {}).get('lon')
+
+    # Fetch coordinates dynamically when this operator supports the StopPlaces
+    # lookup. Some operators (including BART for MLPT) will
+    coordinate_params = {
+        'api_key': API_KEY,
+        'operator_id': operator,
+        'format': 'json',
+        'stop_id': stop_id,
+    }
+    try:
+        location_response = requests.get(
+            'https://api.511.org/transit/stopplaces',
+            params=coordinate_params,
+            timeout=10,
+        )
+        location_response.raise_for_status()
+        location_data = location_response.json()
+        location = location_data["Siri"]["ServiceDelivery"]["DataObjectDelivery"]["dataObjects"]["SiteFrame"]["stopPlaces"]["StopPlace"]["Centroid"]["Location"]
+        latitude = float(location["Latitude"])
+        longitude = float(location["Longitude"])
+    except (requests.RequestException, KeyError, TypeError, ValueError):
+        logging.warning(
+            "Unable to fetch coordinates for operator %s stop %s; using fallback coordinates",
+            operator,
+            stop_id,
+        )
+
     params = {
         'api_key': API_KEY,
         'agency': operator,

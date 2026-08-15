@@ -1,3 +1,19 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.route-predictions-card {
+  container-type: inline-size;
+}
+
+.stop-name {
+  font-size: clamp(1rem, 5cqw, 2.25rem);
+}
+
+.route-card-label {
+  font-size: clamp(0.9rem, 4cqw, 1.65rem);
+}
+
+.route-card-times {
+  font-size: clamp(0.8rem, 3cqw, 1.2rem);
+}
